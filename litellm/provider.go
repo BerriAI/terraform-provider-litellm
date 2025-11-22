@@ -8,14 +8,17 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"litellm_model":           resourceLiteLLMModel(),
-			"litellm_team":            ResourceLiteLLMTeam(),
-			"litellm_team_member":     resourceLiteLLMTeamMember(),
-			"litellm_team_member_add": resourceLiteLLMTeamMemberAdd(),
-			"litellm_key":             resourceKey(),
-			"litellm_mcp_server":      resourceLiteLLMMCPServer(),
-			"litellm_credential":      resourceLiteLLMCredential(),
-			"litellm_vector_store":    resourceLiteLLMVectorStore(),
+			"litellm_model":                   resourceLiteLLMModel(),
+			"litellm_team":                    ResourceLiteLLMTeam(),
+			"litellm_organization":            resourceLiteLLMOrganization(),
+			"litellm_organization_member":     resourceLiteLLMOrganizationMember(),
+			"litellm_organization_member_add": resourceLiteLLMOrganizationMemberAdd(),
+			"litellm_team_member":             resourceLiteLLMTeamMember(),
+			"litellm_team_member_add":         resourceLiteLLMTeamMemberAdd(),
+			"litellm_key":                     resourceKey(),
+			"litellm_mcp_server":              resourceLiteLLMMCPServer(),
+			"litellm_credential":              resourceLiteLLMCredential(),
+			"litellm_vector_store":            resourceLiteLLMVectorStore(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"litellm_credential":   dataSourceLiteLLMCredential(),

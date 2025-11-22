@@ -49,6 +49,39 @@ func (c *Client) DeleteTeam(teamID string) error {
 	return err
 }
 
+// Organization-related methods
+func (c *Client) CreateOrganization(org map[string]interface{}) (map[string]interface{}, error) {
+	return c.sendRequest("POST", "/organization/new", org)
+}
+
+func (c *Client) GetOrganization(orgID string) (map[string]interface{}, error) {
+	return c.sendRequest("GET", fmt.Sprintf("/organization/info?organization_id=%s", orgID), nil)
+}
+
+func (c *Client) UpdateOrganization(org map[string]interface{}) (map[string]interface{}, error) {
+	return c.sendRequest("POST", "/organization/update", org)
+}
+
+func (c *Client) DeleteOrganization(orgID string) error {
+	payload := map[string]interface{}{
+		"organization_ids": []string{orgID},
+	}
+	_, err := c.sendRequest("DELETE", "/organization/delete", payload)
+	return err
+}
+
+func (c *Client) AddOrganizationMember(data map[string]interface{}) (map[string]interface{}, error) {
+	return c.sendRequest("POST", "/organization/member_add", data)
+}
+
+func (c *Client) UpdateOrganizationMember(data map[string]interface{}) (map[string]interface{}, error) {
+	return c.sendRequest("POST", "/organization/member_update", data)
+}
+
+func (c *Client) DeleteOrganizationMember(data map[string]interface{}) (map[string]interface{}, error) {
+	return c.sendRequest("DELETE", "/organization/member_delete", data)
+}
+
 // Key-related methods
 func (c *Client) CreateKey(key *Key) (*Key, error) {
 	resp, err := c.sendRequest("POST", "/key/generate", key)

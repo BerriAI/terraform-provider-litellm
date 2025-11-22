@@ -47,6 +47,19 @@ type TeamResponse struct {
 	TeamMemberPermissions []string               `json:"team_member_permissions,omitempty"`
 }
 
+// OrganizationResponse represents a response from the API containing organization information.
+type OrganizationResponse struct {
+	OrganizationID    string                 `json:"organization_id,omitempty"`
+	OrganizationAlias string                 `json:"organization_alias,omitempty"`
+	Metadata          map[string]interface{} `json:"metadata,omitempty"`
+	Models            []string               `json:"models,omitempty"`
+	MaxBudget         float64                `json:"max_budget,omitempty"`
+	BudgetDuration    string                 `json:"budget_duration,omitempty"`
+	TPMLimit          int                    `json:"tpm_limit,omitempty"`
+	RPMLimit          int                    `json:"rpm_limit,omitempty"`
+	Blocked           bool                   `json:"blocked,omitempty"`
+}
+
 // LiteLLMParams represents the parameters for LiteLLM.
 type LiteLLMParams struct {
 	CustomLLMProvider              string                 `json:"custom_llm_provider"`
