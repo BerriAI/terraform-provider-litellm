@@ -11,7 +11,10 @@ func buildKeyData(d *schema.ResourceData) map[string]interface{} {
 	keyData := make(map[string]interface{})
 
 	if v, ok := d.GetOkExists("models"); ok {
-		keyData["models"] = expandStringList(v.([]interface{}))
+		models := expandStringList(v.([]interface{}))
+		if len(models) > 0 {
+			keyData["models"] = models
+		}
 	}
 	if v, ok := d.GetOkExists("max_budget"); ok {
 		keyData["max_budget"] = v.(float64)
@@ -38,7 +41,10 @@ func buildKeyData(d *schema.ResourceData) map[string]interface{} {
 		keyData["budget_duration"] = v.(string)
 	}
 	if v, ok := d.GetOkExists("allowed_cache_controls"); ok {
-		keyData["allowed_cache_controls"] = expandStringList(v.([]interface{}))
+		cacheControls := expandStringList(v.([]interface{}))
+		if len(cacheControls) > 0 {
+			keyData["allowed_cache_controls"] = cacheControls
+		}
 	}
 	if v, ok := d.GetOkExists("soft_budget"); ok {
 		keyData["soft_budget"] = v.(float64)
@@ -68,13 +74,19 @@ func buildKeyData(d *schema.ResourceData) map[string]interface{} {
 		keyData["model_tpm_limit"] = v.(map[string]interface{})
 	}
 	if v, ok := d.GetOkExists("guardrails"); ok {
-		keyData["guardrails"] = expandStringList(v.([]interface{}))
+		guardrails := expandStringList(v.([]interface{}))
+		if len(guardrails) > 0 {
+			keyData["guardrails"] = guardrails
+		}
 	}
 	if v, ok := d.GetOkExists("blocked"); ok {
 		keyData["blocked"] = v.(bool)
 	}
 	if v, ok := d.GetOkExists("tags"); ok {
-		keyData["tags"] = expandStringList(v.([]interface{}))
+		tags := expandStringList(v.([]interface{}))
+		if len(tags) > 0 {
+			keyData["tags"] = tags
+		}
 	}
 
 	return keyData

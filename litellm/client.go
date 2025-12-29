@@ -72,7 +72,6 @@ func (c *Client) UpdateKey(key *Key) (*Key, error) {
 	// Create a new map with only the fields that can be updated
 	updateData := map[string]interface{}{
 		"key":                   key.Key,
-		"models":                key.Models,
 		"max_budget":            key.MaxBudget,
 		"team_id":               key.TeamID,
 		"max_parallel_requests": key.MaxParallelRequests,
@@ -86,8 +85,15 @@ func (c *Client) UpdateKey(key *Key) (*Key, error) {
 		"model_max_budget":      key.ModelMaxBudget,
 		"model_rpm_limit":       key.ModelRPMLimit,
 		"model_tpm_limit":       key.ModelTPMLimit,
-		"guardrails":            key.Guardrails,
 		"blocked":               key.Blocked,
+	}
+
+	// Only add array fields if they are non-empty
+	if len(key.Models) > 0 {
+		updateData["models"] = key.Models
+	}
+	if len(key.Guardrails) > 0 {
+		updateData["guardrails"] = key.Guardrails
 	}
 
 	resp, err := c.sendRequest("POST", "/key/update", updateData)
