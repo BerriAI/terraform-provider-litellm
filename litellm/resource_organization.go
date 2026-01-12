@@ -92,7 +92,9 @@ func resourceLiteLLMOrganizationRead(d *schema.ResourceData, m interface{}) erro
 
 	log.Printf("[INFO] Reading organization with ID: %s", d.Id())
 
-	resp, err := MakeRequest(client, "GET", fmt.Sprintf("%s?organization_id=%s", endpointOrganizationInfo, d.Id()), nil)
+	resp, err := MakeRequest(client, "POST", endpointOrganizationInfo, map[string]interface{}{
+		"organizations": []string{d.Id()},
+	})
 	if err != nil {
 		return fmt.Errorf("error reading organization: %w", err)
 	}
@@ -104,10 +106,18 @@ func resourceLiteLLMOrganizationRead(d *schema.ResourceData, m interface{}) erro
 		return nil
 	}
 
-	var orgResp OrganizationResponse
-	if err := json.NewDecoder(resp.Body).Decode(&orgResp); err != nil {
+	var orgResps []OrganizationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&orgResps); err != nil {
 		return fmt.Errorf("error decoding organization info response: %w", err)
 	}
+
+	if len(orgResps) == 0 {
+		log.Printf("[WARN] Organization with ID %s not found in response, removing from state", d.Id())
+		d.SetId("")
+		return nil
+	}
+
+	orgResp := orgResps[0]
 
 	d.Set("organization_alias", GetStringValue(orgResp.OrganizationAlias, d.Get("organization_alias").(string)))
 
@@ -163,6 +173,7 @@ func resourceLiteLLMOrganizationDelete(d *schema.ResourceData, m interface{}) er
 	}
 
 	resp, err := MakeRequest(client, "DELETE", endpointOrganizationDelete, deleteData)
+
 	if err != nil {
 		return fmt.Errorf("error deleting organization: %w", err)
 	}
