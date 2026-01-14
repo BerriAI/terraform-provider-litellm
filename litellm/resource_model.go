@@ -153,8 +153,9 @@ func resourceLiteLLMModel() *schema.Resource {
 				Sensitive: true,
 			},
 			"vertex_credentials": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
 			},
 			"additional_litellm_params": {
 				Type:     schema.TypeMap,
