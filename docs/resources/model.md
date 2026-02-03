@@ -118,6 +118,8 @@ The following arguments are supported:
 
 * `base_model` - (Required) string. The actual model identifier from the provider (e.g., "gpt-4", "claude-2").
 
+* `litellm_credential_name` - (Optional) string. Name of a LiteLLM credential to use for this model.
+
 * `tier` - (Optional) string. The usage tier for this model. Valid values are `"free"` or `"paid"`. Default: `"free"`.
 
 * `team_id` - (Optional) string. Associate the model with a specific team.

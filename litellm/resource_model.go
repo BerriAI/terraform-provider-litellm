@@ -157,6 +157,11 @@ func resourceLiteLLMModel() *schema.Resource {
 				Optional:  true,
 				Sensitive: true,
 			},
+			"litellm_credential_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Name of the LiteLLM credential to use",
+			},
 			"additional_litellm_params": {
 				Type:     schema.TypeMap,
 				Optional: true,
