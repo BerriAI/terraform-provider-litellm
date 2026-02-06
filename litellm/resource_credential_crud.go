@@ -2,10 +2,56 @@ package litellm
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
+
+// retryCredentialRead attempts to read a credential with exponential backoff.
+// If the read path clears the ID (e.g., transient 404 right after create),
+// we treat it as retryable instead of accepting an empty state.
+func retryCredentialRead(d *schema.ResourceData, m interface{}, maxRetries int) error {
+	var err error
+	delay := 1 * time.Second
+	maxDelay := 10 * time.Second
+	origID := d.Id()
+
+	for i := 0; i < maxRetries; i++ {
+		log.Printf("[INFO] Attempting to read credential (attempt %d/%d)", i+1, maxRetries)
+
+		err = resourceLiteLLMCredentialRead(d, m)
+		// If read succeeded but wiped the ID, treat as not found so we retry.
+		if err == nil && d.Id() == "" {
+			d.SetId(origID)
+			err = fmt.Errorf("credential_not_found")
+		}
+
+		if err == nil {
+			log.Printf("[INFO] Successfully read credential after %d attempts", i+1)
+			return nil
+		}
+
+		if !strings.Contains(err.Error(), "credential_not_found") {
+			return err
+		}
+
+		if i < maxRetries-1 {
+			log.Printf("[INFO] Credential not found yet, retrying in %v...", delay)
+			time.Sleep(delay)
+
+			delay *= 2
+			if delay > maxDelay {
+				delay = maxDelay
+			}
+		}
+	}
+
+	log.Printf("[WARN] Failed to read credential after %d attempts: %v", maxRetries, err)
+	return err
+}
 
 func resourceLiteLLMCredentialCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*Client)
@@ -48,7 +94,8 @@ func resourceLiteLLMCredentialCreate(d *schema.ResourceData, m interface{}) erro
 	// Set the resource ID to the credential name
 	d.SetId(credentialName)
 
-	return resourceLiteLLMCredentialRead(d, m)
+	log.Printf("[INFO] Credential created with name %s. Starting retry mechanism to read the credential...", credentialName)
+	return retryCredentialRead(d, m, 5)
 }
 
 func resourceLiteLLMCredentialRead(d *schema.ResourceData, m interface{}) error {
@@ -128,7 +175,8 @@ func resourceLiteLLMCredentialUpdate(d *schema.ResourceData, m interface{}) erro
 		return fmt.Errorf("failed to update credential: %w", err)
 	}
 
-	return resourceLiteLLMCredentialRead(d, m)
+	log.Printf("[INFO] Credential updated with name %s. Starting retry mechanism to read the credential...", credentialName)
+	return retryCredentialRead(d, m, 5)
 }
 
 func resourceLiteLLMCredentialDelete(d *schema.ResourceData, m interface{}) error {
