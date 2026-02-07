@@ -97,16 +97,11 @@ func setKeyResourceData(d *schema.ResourceData, key *Key) error {
 		"key":                    key.Key,
 		"models":                 key.Models,
 		"spend":                  key.Spend,
-		"max_budget":             key.MaxBudget,
 		"user_id":                key.UserID,
 		"team_id":                key.TeamID,
-		"max_parallel_requests":  key.MaxParallelRequests,
 		"metadata":               key.Metadata,
-		"tpm_limit":              key.TPMLimit,
-		"rpm_limit":              key.RPMLimit,
 		"budget_duration":        key.BudgetDuration,
 		"allowed_cache_controls": key.AllowedCacheControls,
-		"soft_budget":            key.SoftBudget,
 		"key_alias":              key.KeyAlias,
 		"duration":               key.Duration,
 		"aliases":                key.Aliases,
@@ -124,6 +119,33 @@ func setKeyResourceData(d *schema.ResourceData, key *Key) error {
 		if err := d.Set(field, value); err != nil {
 			log.Printf("[WARN] Error setting %s: %s", field, err)
 			return fmt.Errorf("error setting %s: %s", field, err)
+		}
+	}
+
+	// Handle pointer fields separately - only set if not nil
+	if key.MaxBudget != nil {
+		if err := d.Set("max_budget", *key.MaxBudget); err != nil {
+			return fmt.Errorf("error setting max_budget: %s", err)
+		}
+	}
+	if key.SoftBudget != nil {
+		if err := d.Set("soft_budget", *key.SoftBudget); err != nil {
+			return fmt.Errorf("error setting soft_budget: %s", err)
+		}
+	}
+	if key.MaxParallelRequests != nil {
+		if err := d.Set("max_parallel_requests", *key.MaxParallelRequests); err != nil {
+			return fmt.Errorf("error setting max_parallel_requests: %s", err)
+		}
+	}
+	if key.TPMLimit != nil {
+		if err := d.Set("tpm_limit", *key.TPMLimit); err != nil {
+			return fmt.Errorf("error setting tpm_limit: %s", err)
+		}
+	}
+	if key.RPMLimit != nil {
+		if err := d.Set("rpm_limit", *key.RPMLimit); err != nil {
+			return fmt.Errorf("error setting rpm_limit: %s", err)
 		}
 	}
 
@@ -147,25 +169,35 @@ func mapToKey(data map[string]interface{}) *Key {
 		case "models":
 			key.Models = v.([]string)
 		case "max_budget":
-			key.MaxBudget = v.(float64)
+			if v, ok := v.(float64); ok {
+				key.MaxBudget = &v
+			}
 		case "user_id":
 			key.UserID = v.(string)
 		case "team_id":
 			key.TeamID = v.(string)
 		case "max_parallel_requests":
-			key.MaxParallelRequests = v.(int)
+			if v, ok := v.(int); ok {
+				key.MaxParallelRequests = &v
+			}
 		case "metadata":
 			key.Metadata = v.(map[string]interface{})
 		case "tpm_limit":
-			key.TPMLimit = v.(int)
+			if v, ok := v.(int); ok {
+				key.TPMLimit = &v
+			}
 		case "rpm_limit":
-			key.RPMLimit = v.(int)
+			if v, ok := v.(int); ok {
+				key.RPMLimit = &v
+			}
 		case "budget_duration":
 			key.BudgetDuration = v.(string)
 		case "allowed_cache_controls":
 			key.AllowedCacheControls = v.([]string)
 		case "soft_budget":
-			key.SoftBudget = v.(float64)
+			if v, ok := v.(float64); ok {
+				key.SoftBudget = &v
+			}
 		case "key_alias":
 			key.KeyAlias = v.(string)
 		case "duration":
