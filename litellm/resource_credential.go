@@ -10,6 +10,9 @@ func resourceLiteLLMCredential() *schema.Resource {
 		Read:   resourceLiteLLMCredentialRead,
 		Update: resourceLiteLLMCredentialUpdate,
 		Delete: resourceLiteLLMCredentialDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"credential_name": {
