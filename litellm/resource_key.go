@@ -191,16 +191,11 @@ func resourceKeyDelete(ctx context.Context, d *schema.ResourceData, m interface{
 
 func mapResourceDataToKey(d *schema.ResourceData, key *Key) {
 	key.Models = expandStringList(d.Get("models").([]interface{}))
-	key.MaxBudget = d.Get("max_budget").(float64)
 	key.UserID = d.Get("user_id").(string)
 	key.TeamID = d.Get("team_id").(string)
-	key.MaxParallelRequests = d.Get("max_parallel_requests").(int)
 	key.Metadata = d.Get("metadata").(map[string]interface{})
-	key.TPMLimit = d.Get("tpm_limit").(int)
-	key.RPMLimit = d.Get("rpm_limit").(int)
 	key.BudgetDuration = d.Get("budget_duration").(string)
 	key.AllowedCacheControls = expandStringList(d.Get("allowed_cache_controls").([]interface{}))
-	key.SoftBudget = d.Get("soft_budget").(float64)
 	key.KeyAlias = d.Get("key_alias").(string)
 	key.Duration = d.Get("duration").(string)
 	key.Aliases = d.Get("aliases").(map[string]interface{})
@@ -212,6 +207,29 @@ func mapResourceDataToKey(d *schema.ResourceData, key *Key) {
 	key.Guardrails = expandStringList(d.Get("guardrails").([]interface{}))
 	key.Blocked = d.Get("blocked").(bool)
 	key.Tags = expandStringList(d.Get("tags").([]interface{}))
+
+	// Use GetOk for optional numeric fields to distinguish between "not set" and "zero"
+	// This prevents sending 0 when the user omits the field (which should mean "unlimited")
+	if v, ok := d.GetOk("max_budget"); ok {
+		budget := v.(float64)
+		key.MaxBudget = &budget
+	}
+	if v, ok := d.GetOk("soft_budget"); ok {
+		budget := v.(float64)
+		key.SoftBudget = &budget
+	}
+	if v, ok := d.GetOk("max_parallel_requests"); ok {
+		val := v.(int)
+		key.MaxParallelRequests = &val
+	}
+	if v, ok := d.GetOk("tpm_limit"); ok {
+		val := v.(int)
+		key.TPMLimit = &val
+	}
+	if v, ok := d.GetOk("rpm_limit"); ok {
+		val := v.(int)
+		key.RPMLimit = &val
+	}
 }
 
 func mapKeyToResourceData(d *schema.ResourceData, key *Key) {
@@ -220,8 +238,9 @@ func mapKeyToResourceData(d *schema.ResourceData, key *Key) {
 	if len(key.Models) > 0 {
 		d.Set("models", key.Models)
 	}
-	if key.MaxBudget != 0 {
-		d.Set("max_budget", key.MaxBudget)
+	// Handle pointer types - only set if not nil
+	if key.MaxBudget != nil {
+		d.Set("max_budget", *key.MaxBudget)
 	}
 	if key.UserID != "" {
 		d.Set("user_id", key.UserID)
@@ -229,17 +248,17 @@ func mapKeyToResourceData(d *schema.ResourceData, key *Key) {
 	if key.TeamID != "" {
 		d.Set("team_id", key.TeamID)
 	}
-	if key.MaxParallelRequests != 0 {
-		d.Set("max_parallel_requests", key.MaxParallelRequests)
+	if key.MaxParallelRequests != nil {
+		d.Set("max_parallel_requests", *key.MaxParallelRequests)
 	}
 	if key.Metadata != nil {
 		d.Set("metadata", key.Metadata)
 	}
-	if key.TPMLimit != 0 {
-		d.Set("tpm_limit", key.TPMLimit)
+	if key.TPMLimit != nil {
+		d.Set("tpm_limit", *key.TPMLimit)
 	}
-	if key.RPMLimit != 0 {
-		d.Set("rpm_limit", key.RPMLimit)
+	if key.RPMLimit != nil {
+		d.Set("rpm_limit", *key.RPMLimit)
 	}
 	if key.BudgetDuration != "" {
 		d.Set("budget_duration", key.BudgetDuration)
@@ -247,8 +266,8 @@ func mapKeyToResourceData(d *schema.ResourceData, key *Key) {
 	if len(key.AllowedCacheControls) > 0 {
 		d.Set("allowed_cache_controls", key.AllowedCacheControls)
 	}
-	if key.SoftBudget != 0 {
-		d.Set("soft_budget", key.SoftBudget)
+	if key.SoftBudget != nil {
+		d.Set("soft_budget", *key.SoftBudget)
 	}
 	if key.KeyAlias != "" {
 		d.Set("key_alias", key.KeyAlias)

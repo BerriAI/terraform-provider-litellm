@@ -120,22 +120,37 @@ func (c *Client) GetKey(keyID string) (*Key, error) {
 
 func (c *Client) UpdateKey(key *Key) (*Key, error) {
 	// Create a new map with only the fields that can be updated
+	// Start with required fields and non-nullable fields
 	updateData := map[string]interface{}{
-		"key":                   key.Key,
-		"max_budget":            key.MaxBudget,
-		"team_id":               key.TeamID,
-		"max_parallel_requests": key.MaxParallelRequests,
-		"metadata":              key.Metadata,
-		"tpm_limit":             key.TPMLimit,
-		"rpm_limit":             key.RPMLimit,
-		"budget_duration":       key.BudgetDuration,
-		"key_alias":             key.KeyAlias,
-		"aliases":               key.Aliases,
-		"permissions":           key.Permissions,
-		"model_max_budget":      key.ModelMaxBudget,
-		"model_rpm_limit":       key.ModelRPMLimit,
-		"model_tpm_limit":       key.ModelTPMLimit,
-		"blocked":               key.Blocked,
+		"key":              key.Key,
+		"team_id":          key.TeamID,
+		"metadata":         key.Metadata,
+		"budget_duration":  key.BudgetDuration,
+		"key_alias":        key.KeyAlias,
+		"aliases":          key.Aliases,
+		"permissions":      key.Permissions,
+		"model_max_budget": key.ModelMaxBudget,
+		"model_rpm_limit":  key.ModelRPMLimit,
+		"model_tpm_limit":  key.ModelTPMLimit,
+		"blocked":          key.Blocked,
+	}
+
+	// Only add optional numeric fields if they were explicitly set (not nil)
+	// This prevents sending 0 when the user wants "unlimited" (nil/unset)
+	if key.MaxBudget != nil {
+		updateData["max_budget"] = *key.MaxBudget
+	}
+	if key.SoftBudget != nil {
+		updateData["soft_budget"] = *key.SoftBudget
+	}
+	if key.MaxParallelRequests != nil {
+		updateData["max_parallel_requests"] = *key.MaxParallelRequests
+	}
+	if key.TPMLimit != nil {
+		updateData["tpm_limit"] = *key.TPMLimit
+	}
+	if key.RPMLimit != nil {
+		updateData["rpm_limit"] = *key.RPMLimit
 	}
 
 	// Only add array fields if they are non-empty
@@ -194,7 +209,7 @@ func (c *Client) parseKeyResponse(resp map[string]interface{}) (*Key, error) {
 			}
 		case "max_budget":
 			if f, ok := v.(float64); ok {
-				createdKey.MaxBudget = f
+				createdKey.MaxBudget = &f
 			}
 		case "user_id":
 			if s, ok := v.(string); ok {
@@ -206,7 +221,8 @@ func (c *Client) parseKeyResponse(resp map[string]interface{}) (*Key, error) {
 			}
 		case "max_parallel_requests":
 			if i, ok := v.(float64); ok {
-				createdKey.MaxParallelRequests = int(i)
+				val := int(i)
+				createdKey.MaxParallelRequests = &val
 			}
 		case "metadata":
 			if m, ok := v.(map[string]interface{}); ok {
@@ -214,11 +230,13 @@ func (c *Client) parseKeyResponse(resp map[string]interface{}) (*Key, error) {
 			}
 		case "tpm_limit":
 			if i, ok := v.(float64); ok {
-				createdKey.TPMLimit = int(i)
+				val := int(i)
+				createdKey.TPMLimit = &val
 			}
 		case "rpm_limit":
 			if i, ok := v.(float64); ok {
-				createdKey.RPMLimit = int(i)
+				val := int(i)
+				createdKey.RPMLimit = &val
 			}
 		case "budget_duration":
 			if s, ok := v.(string); ok {
@@ -226,7 +244,7 @@ func (c *Client) parseKeyResponse(resp map[string]interface{}) (*Key, error) {
 			}
 		case "soft_budget":
 			if f, ok := v.(float64); ok {
-				createdKey.SoftBudget = f
+				createdKey.SoftBudget = &f
 			}
 		case "key_alias":
 			if s, ok := v.(string); ok {
