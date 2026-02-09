@@ -3,6 +3,7 @@ package litellm
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -34,8 +35,10 @@ func resourceKey() *schema.Resource {
 				Optional: true,
 			},
 			"team_id": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Team ID that owns this key. Changing this will force key recreation.",
 			},
 			"max_parallel_requests": {
 				Type:     schema.TypeInt,
@@ -171,6 +174,21 @@ func resourceKeyUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 
 	_, err := c.UpdateKey(key)
 	if err != nil {
+		errStr := err.Error()
+		// Check if the key no longer exists (e.g., cascade deleted when team was deleted)
+		// In this case, clear the ID so Terraform will recreate it
+		if strings.Contains(errStr, "does not exist") ||
+			strings.Contains(errStr, "not found") ||
+			strings.Contains(errStr, "invalid user key") {
+			d.SetId("")
+			return diag.Diagnostics{
+				diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  "Key no longer exists, will be recreated",
+					Detail:   fmt.Sprintf("The key %s no longer exists in LiteLLM (possibly cascade deleted with team). Terraform will recreate it.", key.Key),
+				},
+			}
+		}
 		return diag.FromErr(fmt.Errorf("error updating key: %s", err))
 	}
 
