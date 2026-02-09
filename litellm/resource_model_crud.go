@@ -12,11 +12,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// isRetryableModelError checks if the error is a transient "not found" error
+// that may be due to eventual consistency and should be retried
+func isRetryableModelError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	// Check for various "not found" error patterns that indicate eventual consistency
+	return strings.Contains(errStr, "not found") ||
+		strings.Contains(errStr, "Model id =") ||
+		strings.Contains(errStr, "model_not_found")
+}
+
 // retryModelRead attempts to read a model with exponential backoff
+// This handles eventual consistency issues where a newly created model
+// may not be immediately available for reading
 func retryModelRead(d *schema.ResourceData, m interface{}, maxRetries int) error {
 	var err error
-	delay := 1 * time.Second
+	delay := 500 * time.Millisecond // Start with a shorter initial delay
 	maxDelay := 10 * time.Second
+
+	// Small initial delay to allow database to sync
+	time.Sleep(200 * time.Millisecond)
 
 	for i := 0; i < maxRetries; i++ {
 		log.Printf("[INFO] Attempting to read model (attempt %d/%d)", i+1, maxRetries)
@@ -27,14 +45,22 @@ func retryModelRead(d *schema.ResourceData, m interface{}, maxRetries int) error
 			return nil
 		}
 
-		// Check if this is a "model not found" error
-		if err.Error() != "failed to read model: API request failed: Status: 400 Bad Request, Response: {\"detail\":{\"error\":\"Model id = "+d.Id()+" not found on litellm proxy\"}}, Request: null" {
-			// If it's a different error, don't retry
+		// Check if the resource ID was cleared (model not found and considered deleted)
+		if d.Id() == "" {
+			// Model was not found - this could be eventual consistency
+			// Re-set the ID and retry
+			log.Printf("[DEBUG] Model ID was cleared, this might be eventual consistency")
+		}
+
+		// Check if this is a retryable error (transient "not found")
+		if !isRetryableModelError(err) {
+			// If it's a different error type, don't retry
+			log.Printf("[ERROR] Non-retryable error encountered: %v", err)
 			return err
 		}
 
 		if i < maxRetries-1 {
-			log.Printf("[INFO] Model not found yet, retrying in %v...", delay)
+			log.Printf("[INFO] Model not found yet (eventual consistency), retrying in %v...", delay)
 			time.Sleep(delay)
 
 			// Exponential backoff with a maximum delay
@@ -264,7 +290,9 @@ func createOrUpdateModel(d *schema.ResourceData, m interface{}, isUpdate bool) e
 
 	log.Printf("[INFO] Model created with ID %s. Starting retry mechanism to read the model...", modelID)
 	// Read back the resource with retries to ensure the state is consistent
-	return retryModelRead(d, m, 5)
+	// Use 8 retries with exponential backoff (200ms initial + 500ms, 1s, 2s, 4s, 8s, 10s, 10s, 10s)
+	// Total max wait ~45s which should handle most eventual consistency scenarios
+	return retryModelRead(d, m, 8)
 }
 
 func resourceLiteLLMModelCreate(d *schema.ResourceData, m interface{}) error {
