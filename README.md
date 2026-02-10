@@ -27,7 +27,7 @@ To use the LiteLLM provider in your Terraform configuration, you need to declare
 terraform {
   required_providers {
     litellm = {
-      source  = "ncecere/litellm"
+      source  = "BerriAI/litellm"
       version = "~> 0.3.11"
     }
   }
