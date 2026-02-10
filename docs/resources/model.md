@@ -131,6 +131,8 @@ The following arguments are supported:
   * `chat`
   * `moderation`
   * `audio_transcription`
+  * `audio_speech`
+  * `rerank`
 
 * `tpm` - (Optional) integer. Tokens per minute limit for this model.
 

@@ -8,7 +8,7 @@ The LiteLLM provider allows Terraform to manage LiteLLM resources. LiteLLM is a 
 terraform {
   required_providers {
     litellm = {
-      source = "registry.terraform.io/ncecere/litellm"
+      source = "registry.terraform.io/BerriAI/litellm"
     }
   }
 }
@@ -79,7 +79,7 @@ export LITELLM_API_KEY="your-api-key"
 terraform {
   required_providers {
     litellm = {
-      source = "registry.terraform.io/ncecere/litellm"
+      source = "registry.terraform.io/BerriAI/litellm"
     }
   }
 }

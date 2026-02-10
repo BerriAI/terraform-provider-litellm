@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **New Model Modes**: Added support for `audio_speech` and `rerank` model modes
+  - `audio_speech`: For text-to-speech models (e.g., Gemini TTS, OpenAI TTS)
+  - `rerank`: For reranking/semantic ranking models (e.g., Cohere Rerank, Vertex AI Semantic Ranker)
 
 ## [0.3.14] - 2025-08-24
 

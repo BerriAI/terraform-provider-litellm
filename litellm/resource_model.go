@@ -92,6 +92,8 @@ func resourceLiteLLMModel() *schema.Resource {
 					"chat",
 					"moderation",
 					"audio_transcription",
+					"audio_speech",
+					"rerank",
 				}, false),
 			},
 			"input_cost_per_million_tokens": {
