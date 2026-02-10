@@ -227,6 +227,11 @@ func createOrUpdateModel(d *schema.ResourceData, m interface{}, isUpdate bool) e
 		}
 	}
 
+	// Add litellm_credential_name to litellmParams if provided
+	if credentialName := d.Get("litellm_credential_name").(string); credentialName != "" {
+		litellmParams["litellm_credential_name"] = credentialName
+	}
+
 	modelReq := ModelRequest{
 		ModelName:     d.Get("model_name").(string),
 		LiteLLMParams: litellmParams,
@@ -303,6 +308,9 @@ func resourceLiteLLMModelRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("tier", GetStringValue(modelResp.ModelInfo.Tier, d.Get("tier").(string)))
 	d.Set("mode", GetStringValue(modelResp.ModelInfo.Mode, d.Get("mode").(string)))
 	d.Set("team_id", GetStringValue(modelResp.ModelInfo.TeamID, d.Get("team_id").(string)))
+
+	// Preserve credential name from state since it might not be returned by API
+	d.Set("litellm_credential_name", d.Get("litellm_credential_name").(string))
 
 	// Store sensitive information
 	d.Set("model_api_key", d.Get("model_api_key"))
