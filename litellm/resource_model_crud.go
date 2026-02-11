@@ -62,10 +62,6 @@ func createOrUpdateModel(d *schema.ResourceData, m interface{}, isUpdate bool) e
 		return fmt.Errorf("invalid type assertion for client")
 	}
 
-	// Convert cost per million tokens to cost per token
-	inputCostPerToken := d.Get("input_cost_per_million_tokens").(float64) / 1000000.0
-	outputCostPerToken := d.Get("output_cost_per_million_tokens").(float64) / 1000000.0
-
 	// Construct the model name in the format "custom_llm_provider/base_model"
 	customLLMProvider := d.Get("custom_llm_provider").(string)
 	baseModel := d.Get("base_model").(string)
@@ -90,8 +86,6 @@ func createOrUpdateModel(d *schema.ResourceData, m interface{}, isUpdate bool) e
 	litellmParams := map[string]interface{}{
 		"custom_llm_provider":                customLLMProvider,
 		"model":                              modelName,
-		"input_cost_per_token":               inputCostPerToken,
-		"output_cost_per_token":              outputCostPerToken,
 		"merge_reasoning_content_in_choices": d.Get("merge_reasoning_content_in_choices").(bool),
 	}
 
@@ -101,6 +95,13 @@ func createOrUpdateModel(d *schema.ResourceData, m interface{}, isUpdate bool) e
 	}
 	if rpm := d.Get("rpm").(int); rpm > 0 {
 		litellmParams["rpm"] = rpm
+	}
+	// Only include cost fields if explicitly set (non-zero)
+	if inputCostPerMillion := d.Get("input_cost_per_million_tokens").(float64); inputCostPerMillion > 0 {
+		litellmParams["input_cost_per_token"] = inputCostPerMillion / 1000000.0
+	}
+	if outputCostPerMillion := d.Get("output_cost_per_million_tokens").(float64); outputCostPerMillion > 0 {
+		litellmParams["output_cost_per_token"] = outputCostPerMillion / 1000000.0
 	}
 	if apiKey := d.Get("model_api_key").(string); apiKey != "" {
 		litellmParams["api_key"] = apiKey
