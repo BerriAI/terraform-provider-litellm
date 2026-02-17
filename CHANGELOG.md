@@ -7,10 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-17
+
+### Added
+- **Documentation**: Added RELEASING.md with comprehensive release process documentation
+  - GPG key setup instructions
+  - Step-by-step release workflow
+  - Troubleshooting guide
+  - Security best practices
+
+## [0.1.1] - 2026-02-11
+
 ### Added
 - **New Model Modes**: Added support for `audio_speech` and `rerank` model modes
   - `audio_speech`: For text-to-speech models (e.g., Gemini TTS, OpenAI TTS)
   - `rerank`: For reranking/semantic ranking models (e.g., Cohere Rerank, Vertex AI Semantic Ranker)
+
+### Fixed
+- Implemented exponential backoff for credential reads
+- Only include cost fields when explicitly set in model resource
+- Added litellm_credential_name support
 
 ## [0.3.14] - 2025-08-24
 
