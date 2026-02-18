@@ -28,7 +28,7 @@ terraform {
   required_providers {
     litellm = {
       source  = "BerriAI/litellm"
-      version = "~> 0.3.11"
+      version = "~> 0.1.1" #HERE UPDATE VERSION ACCORDINGLY
     }
   }
 }
