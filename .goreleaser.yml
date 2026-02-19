@@ -27,8 +27,28 @@ builds:
     - arm
     - arm64
   ignore:
+    # macOS doesn't support 32-bit anymore
     - goos: darwin
       goarch: '386'
+    # Windows ARM is uncommon for Terraform usage
+    - goos: windows
+      goarch: arm
+    - goos: windows
+      goarch: arm64
+    # FreeBSD ARM is rarely used
+    - goos: freebsd
+      goarch: arm
+    - goos: freebsd
+      goarch: arm64
+  # This builds the following key targets for Terraform users:
+  # - linux/amd64 (most common CI/CD)
+  # - linux/arm64 (Graviton, ARM-based CI)
+  # - linux/386 (legacy 32-bit systems)
+  # - linux/arm (Raspberry Pi, etc.)
+  # - darwin/amd64 (Intel Macs)
+  # - darwin/arm64 (Apple Silicon Macs)
+  # - windows/amd64 (Windows desktops)
+  # - freebsd/amd64, freebsd/386 (FreeBSD servers)
   binary: '{{ .ProjectName }}_v{{ .Version }}'
 archives:
 - format: zip
