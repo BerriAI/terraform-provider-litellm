@@ -20,8 +20,13 @@ func resourceKey() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"key": {
 				Type:      schema.TypeString,
-				Computed:  true,
+				Optional:  true,
+				WriteOnly: true,
 				Sensitive: true,
+			},
+			"token_id": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"models": {
 				Type:     schema.TypeList,
@@ -146,7 +151,10 @@ func resourceKeyCreate(ctx context.Context, d *schema.ResourceData, m interface{
 		return diag.FromErr(fmt.Errorf("error creating key: %s", err))
 	}
 
-	d.SetId(createdKey.Key)
+	d.SetId(createdKey.TokenID)
+	// Set the write-only key value so it's available during this apply
+	// but will not be persisted to state.
+	d.Set("key", createdKey.Key)
 	return resourceKeyRead(ctx, d, m)
 }
 
@@ -234,7 +242,12 @@ func mapResourceDataToKey(d *schema.ResourceData, key *Key) {
 }
 
 func mapKeyToResourceData(d *schema.ResourceData, key *Key) {
-	d.Set("key", key.Key)
+	// token_id is the SHA-256 hash of the key, used as the resource ID.
+	// It is safe to store in state since it cannot be used to authenticate.
+	d.Set("token_id", d.Id())
+
+	// Note: "key" is write-only and must not be set here (Read operations).
+	// It is only set during Create so it is available during apply.
 
 	if len(key.Models) > 0 {
 		d.Set("models", key.Models)
