@@ -192,6 +192,10 @@ func (c *Client) parseKeyResponse(resp map[string]interface{}) (*Key, error) {
 			if s, ok := v.(string); ok {
 				createdKey.Key = s
 			}
+		case "token_id":
+			if s, ok := v.(string); ok {
+				createdKey.TokenID = s
+			}
 		case "models":
 			if models, ok := v.([]interface{}); ok {
 				createdKey.Models = make([]string, len(models))
