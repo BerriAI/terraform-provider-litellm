@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-03
+
+### ⚠️ Breaking Changes
+
+#### `litellm_key`: API keys are no longer stored in Terraform state
+
+**Why this change?** Storing raw API keys in Terraform state is a security risk — state files are often stored in S3, Terraform Cloud, or other backends where the key could be exposed even with encryption at rest. This release eliminates that risk entirely.
+
+**What changed:**
+- The `key` attribute is now **write-only** — available during `terraform apply` so you can pipe it to a secrets manager, but never persisted to state
+- The resource ID has changed from the raw key value to its **SHA-256 hash (`token_id`)** — safe to store in state, cannot be used to authenticate
+- **Requires Terraform 1.11+**
+
+**Migration steps for existing `litellm_key` resources:**
+
+1. Find the `token_id` for each key via the LiteLLM UI or `GET /key/info?key=<your-key>`
+2. Remove the old resource from state:
+   ```
+   terraform state rm litellm_key.example
+   ```
+3. Re-import using the token_id:
+   ```
+   terraform import litellm_key.example <token_id>
+   ```
+
+> ⚠️ After upgrading, you cannot retrieve the raw key from state. Make sure you have the key value stored somewhere safe before migrating, or plan to rotate the key after re-import.
+
+**Security best practice:** Since the key is only available during the initial `terraform apply`, pipe it directly to a secrets manager:
+
+```hcl
+resource "aws_ssm_parameter" "litellm_key" {
+  name  = "/myapp/litellm-key"
+  type  = "SecureString"
+  value = litellm_key.example.key
+}
+```
+
+### Fixed
+
+- **key**: API key is no longer stored in Terraform state. The `key` attribute is now write-only and `token_id` is used as the resource ID (#27)
+- **model**: Handle eventual consistency in model reads post-create (#26)
+
 ## [0.1.2] - 2026-02-17
 
 ### Added
