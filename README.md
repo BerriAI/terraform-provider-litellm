@@ -72,7 +72,29 @@ resource "litellm_key" "example_key" {
   tpm_limit             = 1000
   rpm_limit             = 60
   budget_duration       = "monthly"
-  tags                  = ["production", "api"]
+  allowed_cache_controls = ["no-cache", "max-age=3600"]
+  soft_budget           = 80.0
+  aliases = {
+    "gpt-4" = "gpt4"
+  }
+  config = {
+    default_model = "gpt-4"
+  }
+  permissions = {
+    can_create_keys = "true"
+  }
+  model_max_budget = {
+    "gpt-4" = 50.0
+  }
+  model_rpm_limit = {
+    "claude-3.5-sonnet" = 30
+  }
+  model_tpm_limit = {
+    "gpt-4" = 500
+  }
+  guardrails = ["content_filter", "token_limit"]
+  blocked    = false
+  tags       = ["production", "api"]
 }
 
 # Capture the key during apply — it won't be available afterward
