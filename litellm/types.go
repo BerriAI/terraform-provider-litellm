@@ -39,9 +39,9 @@ type TeamResponse struct {
 	TeamAlias             string                 `json:"team_alias,omitempty"`
 	OrganizationID        string                 `json:"organization_id,omitempty"`
 	Metadata              map[string]interface{} `json:"metadata,omitempty"`
-	TPMLimit              int                    `json:"tpm_limit,omitempty"`
-	RPMLimit              int                    `json:"rpm_limit,omitempty"`
-	MaxBudget             float64                `json:"max_budget,omitempty"`
+	TPMLimit              *int                   `json:"tpm_limit,omitempty"`
+	RPMLimit              *int                   `json:"rpm_limit,omitempty"`
+	MaxBudget             *float64               `json:"max_budget,omitempty"`
 	BudgetDuration        string                 `json:"budget_duration,omitempty"`
 	Models                []string               `json:"models"`
 	Blocked               bool                   `json:"blocked,omitempty"`
@@ -54,10 +54,10 @@ type OrganizationResponse struct {
 	OrganizationAlias string                 `json:"organization_alias,omitempty"`
 	Metadata          map[string]interface{} `json:"metadata,omitempty"`
 	Models            []string               `json:"models,omitempty"`
-	MaxBudget         float64                `json:"max_budget,omitempty"`
+	MaxBudget         *float64               `json:"max_budget,omitempty"`
 	BudgetDuration    string                 `json:"budget_duration,omitempty"`
-	TPMLimit          int                    `json:"tpm_limit,omitempty"`
-	RPMLimit          int                    `json:"rpm_limit,omitempty"`
+	TPMLimit          *int                   `json:"tpm_limit,omitempty"`
+	RPMLimit          *int                   `json:"rpm_limit,omitempty"`
 	Blocked           bool                   `json:"blocked,omitempty"`
 }
 
