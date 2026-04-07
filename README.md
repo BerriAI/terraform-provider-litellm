@@ -63,38 +63,42 @@ Here's an example of creating an API key. The `key` value is **write-only** — 
 
 ```hcl
 resource "litellm_key" "example_key" {
-  key_alias             = "prod-key-1"
-  models                = ["gpt-4", "claude-3.5-sonnet"]
-  max_budget            = 100.0
-  user_id               = "user123"
-  team_id               = "team456"
+  models               = ["gpt-4", "claude-3.5-sonnet"]
+  max_budget           = 100.0
+  user_id              = "user123"
+  team_id              = "team456"
   max_parallel_requests = 5
-  tpm_limit             = 1000
-  rpm_limit             = 60
-  budget_duration       = "monthly"
+  tpm_limit            = 1000
+  rpm_limit            = 60
+  budget_duration      = "monthly"
+  key_alias            = "prod-key-1"
+  duration             = "30d"
+  metadata             = {
+    environment = "production"
+  }
   allowed_cache_controls = ["no-cache", "max-age=3600"]
-  soft_budget            = 80.0
-  aliases                = {
+  soft_budget          = 80.0
+  aliases              = {
     "gpt-4" = "gpt4"
   }
-  config                 = {
+  config               = {
     default_model = "gpt-4"
   }
-  permissions            = {
+  permissions          = {
     can_create_keys = "true"
   }
-  model_max_budget       = {
+  model_max_budget     = {
     "gpt-4" = 50.0
   }
-  model_rpm_limit        = {
+  model_rpm_limit      = {
     "claude-3.5-sonnet" = 30
   }
-  model_tpm_limit        = {
+  model_tpm_limit      = {
     "gpt-4" = 500
   }
-  guardrails             = ["content_filter", "token_limit"]
-  blocked                = false
-  tags                   = ["production", "api"]
+  guardrails           = ["content_filter", "token_limit"]
+  blocked              = false
+  tags                 = ["production", "api"]
 }
 
 # Capture the key during apply — it won't be available afterward
