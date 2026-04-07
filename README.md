@@ -16,7 +16,7 @@ This Terraform provider allows you to manage LiteLLM resources through Infrastru
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.11 (required for write-only attribute support in `litellm_key`)
 - [Go](https://golang.org/doc/install) >= 1.16 (for development)
 
 ## Using the Provider
@@ -28,7 +28,7 @@ terraform {
   required_providers {
     litellm = {
       source  = "BerriAI/litellm"
-      version = "~> 0.1.1" #HERE UPDATE VERSION ACCORDINGLY
+      version = "~> 0.2.0"
     }
   }
 }
@@ -59,46 +59,27 @@ resource "litellm_model" "gpt4" {
 
 For full details on the <code>litellm_model</code> resource, see the [model resource documentation](docs/resources/model.md).
 
-Here's an example of creating an API key with various options:
+Here's an example of creating an API key. The `key` value is **write-only** — available during `terraform apply` but never stored in state. Pipe it directly to a secrets manager:
 
 ```hcl
 resource "litellm_key" "example_key" {
-  models               = ["gpt-4", "claude-3.5-sonnet"]
-  max_budget           = 100.0
-  user_id              = "user123"
-  team_id              = "team456"
+  key_alias             = "prod-key-1"
+  models                = ["gpt-4", "claude-3.5-sonnet"]
+  max_budget            = 100.0
+  user_id               = "user123"
+  team_id               = "team456"
   max_parallel_requests = 5
-  tpm_limit            = 1000
-  rpm_limit            = 60
-  budget_duration      = "monthly"
-  key_alias            = "prod-key-1"
-  duration             = "30d"
-  metadata             = {
-    environment = "production"
-  }
-  allowed_cache_controls = ["no-cache", "max-age=3600"]
-  soft_budget          = 80.0
-  aliases              = {
-    "gpt-4" = "gpt4"
-  }
-  config               = {
-    default_model = "gpt-4"
-  }
-  permissions          = {
-    can_create_keys = "true"
-  }
-  model_max_budget     = {
-    "gpt-4" = 50.0
-  }
-  model_rpm_limit      = {
-    "claude-3.5-sonnet" = 30
-  }
-  model_tpm_limit      = {
-    "gpt-4" = 500
-  }
-  guardrails           = ["content_filter", "token_limit"]
-  blocked              = false
-  tags                 = ["production", "api"]
+  tpm_limit             = 1000
+  rpm_limit             = 60
+  budget_duration       = "monthly"
+  tags                  = ["production", "api"]
+}
+
+# Capture the key during apply — it won't be available afterward
+resource "aws_ssm_parameter" "litellm_key" {
+  name  = "/myapp/litellm-key"
+  type  = "SecureString"
+  value = litellm_key.example_key.key
 }
 ```
 
