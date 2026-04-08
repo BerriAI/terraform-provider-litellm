@@ -8,9 +8,47 @@ Releases are triggered manually via GitHub Actions using [semantic-release](http
 
 ## How to Release
 
-1. Ensure all PRs for the release are merged to `main`
-2. Go to **Actions → Semantic Release → Run workflow** in the GitHub UI
-3. Click **Run workflow**
+### 1. Prepare the Release
+
+Before triggering the release:
+
+1. **Update CHANGELOG.md**
+   - Move items from `[Unreleased]` section to a new version section
+   - Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format
+   - Include all notable changes since the last release
+
+   Example:
+   ```markdown
+   ## [0.2.1] - 2026-04-08
+
+   ### Fixed
+   - Bug fix description
+
+   ### Added
+   - New feature description
+   ```
+
+2. **Verify tests pass**
+   ```bash
+   make test
+   ```
+
+3. **Verify the build works locally**
+   ```bash
+   make build
+   ```
+
+4. **Commit and push changes to `main`**
+   ```bash
+   git add CHANGELOG.md
+   git commit -m "docs: update CHANGELOG for vX.Y.Z"
+   git push upstream main
+   ```
+
+### 2. Trigger the Release
+
+1. Go to **Actions → Semantic Release → Run workflow** in the GitHub UI
+2. Click **Run workflow**
 
 semantic-release will:
 - Analyze commits since the last tag using [Conventional Commits](https://www.conventionalcommits.org/)
@@ -93,9 +131,21 @@ Before publishing to the Terraform Registry:
 
 **Note**: The public key fingerprint must match the key used to sign the provider releases.
 
-## Verifying a Release
+### 3. Monitor the Release Workflow
 
-After the workflow completes:
+1. Go to https://github.com/BerriAI/terraform-provider-litellm/actions
+2. Find the **Semantic Release** workflow run and confirm the tag was created
+3. Find the **Release** (GoReleaser) workflow run triggered by the new tag and monitor its progress
+
+The GoReleaser workflow will:
+- Build binaries for multiple platforms (Linux, macOS, Windows, FreeBSD)
+- Create archives and checksums
+- Sign the checksums with GPG
+- Create a GitHub Release and upload all artifacts
+
+### 4. Verify the Release
+
+After both workflows complete successfully:
 
 1. **Check the GitHub Release** at https://github.com/BerriAI/terraform-provider-litellm/releases — confirm binaries, SHA256SUMS, and `.sig` are present
 
