@@ -33,30 +33,162 @@ Commits with other prefixes (`docs:`, `chore:`, `refactor:`, etc.) do not trigge
 
 ## Prerequisites (One-Time Setup)
 
-### GPG Key
+### GPG Key Setup
 
-The Terraform Registry requires signed releases. The following secrets must be configured in the repository under **Settings → Secrets and variables → Actions**:
+The Terraform Registry requires all providers to be signed with a GPG key. This must be configured before the first release.
 
-| Secret | Description |
-|---|---|
-| `GPG_PRIVATE_KEY` | Full output of `gpg --armor --export-secret-keys <KEY_ID>` |
-| `PASSPHRASE` | Passphrase for the GPG key (leave empty if none) |
+#### 1. Generate a GPG Key
 
-### Terraform Registry
+If you don't already have a GPG key for provider signing:
 
-The public GPG key must be registered at https://registry.terraform.io/settings/gpg-keys. This is a one-time step per signing key.
+```bash
+gpg --full-generate-key
+```
+
+Configuration:
+- Key type: RSA and RSA (default)
+- Key size: 4096 bits
+- Expiration: No expiration (or set a long expiration period)
+- Email: Use an email associated with your GitHub account
+- Set a strong passphrase (or leave empty for CI/CD use)
+
+#### 2. Export the GPG Key
+
+```bash
+# List your keys to get the key ID
+gpg --list-secret-keys --keyid-format=long
+
+# Example output:
+# sec   rsa4096/ABCD1234EFGH5678 2024-01-01 [SC]
+#       1234567890ABCDEF1234567890ABCDEF12345678
+# uid                 [ultimate] Your Name <your.email@example.com>
+#
+# The key ID is: ABCD1234EFGH5678
+# The fingerprint is: 1234567890ABCDEF1234567890ABCDEF12345678
+
+# Export the private key (ASCII-armored format)
+gpg --armor --export-secret-keys ABCD1234EFGH5678
+
+# Export the public key
+gpg --armor --export ABCD1234EFGH5678
+```
+
+#### 3. Configure GitHub Repository Secrets
+
+Add the following secrets to the repository at: **Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret Name | Description | Value |
+|-------------|-------------|-------|
+| `GPG_PRIVATE_KEY` | The GPG private key for signing releases | Full output from `gpg --armor --export-secret-keys` (including `-----BEGIN PGP PRIVATE KEY BLOCK-----` and `-----END PGP PRIVATE KEY BLOCK-----`) |
+| `PASSPHRASE` | The passphrase for the GPG key | Your GPG key passphrase (leave empty if no passphrase was set) |
+
+#### 4. Register Public Key with Terraform Registry
+
+Before publishing to the Terraform Registry:
+
+1. Go to https://registry.terraform.io/settings/gpg-keys
+2. Click "Add a key"
+3. Paste your public GPG key (output from `gpg --armor --export`)
+4. Submit
+
+**Note**: The public key fingerprint must match the key used to sign the provider releases.
 
 ## Verifying a Release
 
 After the workflow completes:
 
-1. Check the GitHub Release at https://github.com/BerriAI/terraform-provider-litellm/releases — confirm binaries, SHA256SUMS, and `.sig` are present
-2. Check the Terraform Registry at https://registry.terraform.io/providers/BerriAI/litellm/latest — the new version should appear within a few minutes
+1. **Check the GitHub Release** at https://github.com/BerriAI/terraform-provider-litellm/releases — confirm binaries, SHA256SUMS, and `.sig` are present
+
+2. **Verify the signature** (optional)
+   ```bash
+   wget https://github.com/BerriAI/terraform-provider-litellm/releases/download/v0.1.2/terraform-provider-litellm_0.1.2_SHA256SUMS
+   wget https://github.com/BerriAI/terraform-provider-litellm/releases/download/v0.1.2/terraform-provider-litellm_0.1.2_SHA256SUMS.sig
+
+   gpg --verify terraform-provider-litellm_0.1.2_SHA256SUMS.sig terraform-provider-litellm_0.1.2_SHA256SUMS
+   ```
+
+3. **Check the Terraform Registry** at https://registry.terraform.io/providers/BerriAI/litellm/latest — the new version should appear within a few minutes
 
 ## Troubleshooting
 
-**semantic-release creates no tag**: No commits since the last tag match `fix:`, `feat:`, or `BREAKING CHANGE`. Check commit messages.
+### semantic-release Creates No Tag
 
-**GoReleaser GPG error** (`gpg: signing failed: No secret key`): Verify `GPG_PRIVATE_KEY` and `PASSPHRASE` secrets are set correctly and the key hasn't expired.
+**Cause**: No commits since the last tag match `fix:`, `feat:`, or `BREAKING CHANGE`.
 
-**Registry not showing new version**: The registry webhook usually picks up within minutes. If not, check the webhook status under the provider's settings on registry.terraform.io.
+**Solution**: Check commit messages since the last tag. At least one must follow the Conventional Commits format with a release-triggering prefix.
+
+### Release Workflow Fails with GPG Error
+
+**Error**: `Input required and not supplied: gpg_private_key`
+
+**Solution**:
+- Verify that `GPG_PRIVATE_KEY` and `PASSPHRASE` secrets are configured in the repository
+- Ensure the secrets are not expired
+- Check that the secret names match exactly (case-sensitive)
+
+### GoReleaser Signing Fails
+
+**Error**: `gpg: signing failed: No secret key`
+
+**Solution**:
+- Verify the `GPG_PRIVATE_KEY` secret contains the complete private key block
+- Ensure the passphrase is correct
+- Check that the key hasn't expired: `gpg --list-keys`
+
+### Build Fails
+
+**Error**: Build errors during compilation
+
+**Solution**:
+- Run `make test` and `make build` locally first
+- Ensure `go.mod` and `go.sum` are up to date
+- Check that all dependencies are available
+
+### Tag Already Exists
+
+**Error**: Cannot push tag because it already exists
+
+**Solution**:
+```bash
+# Delete local tag
+git tag -d v0.1.2
+
+# Delete remote tag (use with caution!)
+git push origin :refs/tags/v0.1.2
+```
+
+**Warning**: Deleting and recreating tags should be avoided in production. If a release has already been published, create a new patch version instead.
+
+### Registry Not Showing New Version
+
+The registry webhook usually picks up within minutes. If not, check the webhook status under the provider's settings on registry.terraform.io.
+
+## Version Numbering
+
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
+
+- **MAJOR** version (1.0.0): Incompatible API changes
+- **MINOR** version (0.1.0): New functionality in a backward-compatible manner
+- **PATCH** version (0.0.1): Backward-compatible bug fixes
+
+For pre-1.0 releases:
+- Breaking changes may occur in minor versions
+- Patch versions should only contain bug fixes
+
+## Security Considerations
+
+1. **Never commit private keys**: The GPG private key should only be stored as a GitHub secret
+2. **Protect repository secrets**: Limit who has access to manage repository secrets
+3. **Use a dedicated key**: Consider using a separate GPG key specifically for provider signing
+4. **Key rotation**: If the GPG key is compromised, generate a new key, update secrets, and register the new public key with the Terraform Registry
+5. **Passphrase**: Use a strong passphrase for the GPG key, or use a passphrase-less key specifically for CI/CD
+
+## References
+
+- [semantic-release Documentation](https://semantic-release.gitbook.io/semantic-release/)
+- [Conventional Commits](https://www.conventionalcommits.org/)
+- [GoReleaser Documentation](https://goreleaser.com/)
+- [Terraform Provider Publishing](https://www.terraform.io/docs/registry/providers/publishing.html)
+- [HashiCorp GPG Signing Requirements](https://www.terraform.io/docs/registry/providers/publishing.html#signing-releases)
+- [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+- [Semantic Versioning](https://semver.org/)
