@@ -133,9 +133,15 @@ func resourceLiteLLMTeamRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("metadata", d.Get("metadata"))
 	}
 
-	d.Set("tpm_limit", GetIntValue(teamResp.TPMLimit, d.Get("tpm_limit").(int)))
-	d.Set("rpm_limit", GetIntValue(teamResp.RPMLimit, d.Get("rpm_limit").(int)))
-	d.Set("max_budget", GetFloatValue(teamResp.MaxBudget, d.Get("max_budget").(float64)))
+	if teamResp.TPMLimit != nil {
+		d.Set("tpm_limit", *teamResp.TPMLimit)
+	}
+	if teamResp.RPMLimit != nil {
+		d.Set("rpm_limit", *teamResp.RPMLimit)
+	}
+	if teamResp.MaxBudget != nil {
+		d.Set("max_budget", *teamResp.MaxBudget)
+	}
 	d.Set("budget_duration", GetStringValue(teamResp.BudgetDuration, d.Get("budget_duration").(string)))
 
 	// Handle models separately as it's a list

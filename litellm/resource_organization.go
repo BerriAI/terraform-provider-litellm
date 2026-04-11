@@ -133,10 +133,16 @@ func resourceLiteLLMOrganizationRead(d *schema.ResourceData, m interface{}) erro
 		d.Set("models", d.Get("models"))
 	}
 
-	d.Set("max_budget", GetFloatValue(orgResp.MaxBudget, d.Get("max_budget").(float64)))
+	if orgResp.MaxBudget != nil {
+		d.Set("max_budget", *orgResp.MaxBudget)
+	}
 	d.Set("budget_duration", GetStringValue(orgResp.BudgetDuration, d.Get("budget_duration").(string)))
-	d.Set("tpm_limit", GetIntValue(orgResp.TPMLimit, d.Get("tpm_limit").(int)))
-	d.Set("rpm_limit", GetIntValue(orgResp.RPMLimit, d.Get("rpm_limit").(int)))
+	if orgResp.TPMLimit != nil {
+		d.Set("tpm_limit", *orgResp.TPMLimit)
+	}
+	if orgResp.RPMLimit != nil {
+		d.Set("rpm_limit", *orgResp.RPMLimit)
+	}
 	d.Set("blocked", GetBoolValue(orgResp.Blocked, d.Get("blocked").(bool)))
 
 	log.Printf("[INFO] Successfully read organization with ID: %s", d.Id())
