@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-13
+
+### Fixed
+
+- **team, organization**: Use pointer types for `tpm_limit`, `rpm_limit`, and `max_budget` to prevent zero-value diffs on every `terraform plan` when these fields are not configured (#31)
+
 ## [0.2.0] - 2026-04-03
 
 ### ⚠️ Breaking Changes
