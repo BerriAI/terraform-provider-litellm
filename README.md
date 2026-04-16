@@ -16,7 +16,7 @@ This Terraform provider allows you to manage LiteLLM resources through Infrastru
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.11 (required for write-only attribute support in `litellm_key`)
 - [Go](https://golang.org/doc/install) >= 1.16 (for development)
 
 ## Using the Provider
@@ -28,7 +28,7 @@ terraform {
   required_providers {
     litellm = {
       source  = "BerriAI/litellm"
-      version = "~> 0.1.1" #HERE UPDATE VERSION ACCORDINGLY
+      version = "~> 0.2.0"
     }
   }
 }
@@ -59,7 +59,7 @@ resource "litellm_model" "gpt4" {
 
 For full details on the <code>litellm_model</code> resource, see the [model resource documentation](docs/resources/model.md).
 
-Here's an example of creating an API key with various options:
+Here's an example of creating an API key. The `key` value is **write-only** — available during `terraform apply` but never stored in state. Pipe it directly to a secrets manager:
 
 ```hcl
 resource "litellm_key" "example_key" {
@@ -99,6 +99,13 @@ resource "litellm_key" "example_key" {
   guardrails           = ["content_filter", "token_limit"]
   blocked              = false
   tags                 = ["production", "api"]
+}
+
+# Capture the key during apply — it won't be available afterward
+resource "aws_ssm_parameter" "litellm_key" {
+  name  = "/myapp/litellm-key"
+  type  = "SecureString"
+  value = litellm_key.example_key.key
 }
 ```
 

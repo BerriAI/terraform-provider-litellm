@@ -2,6 +2,8 @@
 
 Manages a LiteLLM API key.
 
+> **Requires Terraform 1.11+** — this resource uses write-only attributes to prevent the API key from being stored in Terraform state.
+
 ## Example Usage
 
 ```hcl
@@ -42,6 +44,13 @@ resource "litellm_key" "example" {
   guardrails           = ["content_filter", "token_limit"]
   blocked              = false
   tags                 = ["production", "api"]
+}
+
+# Capture the key during apply — it won't be available afterward
+resource "aws_ssm_parameter" "litellm_key" {
+  name  = "/myapp/litellm-key"
+  type  = "SecureString"
+  value = litellm_key.example.key
 }
 ```
 
@@ -97,20 +106,26 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-* `key` - The generated API key. This is the actual key value that will be used for authentication.
+* `key` - (Write-only) The generated API key. Available during `terraform apply` but **never stored in Terraform state**. Use it immediately to write to a secrets manager. Cannot be retrieved after the apply completes.
+
+* `token_id` - The SHA-256 hash of the key. Used as the Terraform resource ID. Safe to store in state — cannot be used to authenticate against the LiteLLM API.
 
 * `spend` - The current spend for this key. This reflects the total amount spent using this key so far.
 
-## State Management
+## Security Notes
 
-Recent updates have improved how the Key resource manages its state. The provider now ensures that all non-zero and non-empty values are correctly persisted in the Terraform state file. This means that any value you set will be accurately reflected in your state, preventing unnecessary updates and ensuring consistency between your configuration and the actual resource state.
+The `key` attribute is write-only (requires Terraform 1.11+). This means:
+
+- The raw key value is **never written to the Terraform state file**
+- It is available during `terraform apply` so you can reference it in other resources (e.g., `aws_ssm_parameter`, `kubernetes_secret`)
+- After the apply completes, it cannot be retrieved — plan accordingly
 
 ## Import
 
-LiteLLM keys can be imported using the `id`, e.g.,
+LiteLLM keys can be imported using the `token_id` (SHA-256 hash of the key), e.g.:
 
 ```
-$ terraform import litellm_key.example 12345
+$ terraform import litellm_key.example <token_id>
 ```
 
-This allows you to import existing keys into your Terraform state, enabling management of keys that were created outside of Terraform.
+The `token_id` can be found via the LiteLLM UI or by calling `GET /key/info?key=<your-key>`.
