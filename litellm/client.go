@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -34,23 +32,12 @@ func NewClient(apiBase, apiKey string, insecureSkipVerify bool) *Client {
 	}
 }
 
-// validateUUID checks if the provided string is a valid UUID format
-func (c *Client) validateUUID(id string) error {
-	if err := uuid.Validate(id); err != nil {
-		return fmt.Errorf("invalid UUID format: %v", err)
-	}
-	return nil
-}
-
 // Team-related methods
 func (c *Client) CreateTeam(team map[string]interface{}) (map[string]interface{}, error) {
 	return c.sendRequest("POST", "/team/new", team)
 }
 
 func (c *Client) GetTeam(teamID string) (map[string]interface{}, error) {
-	if err := c.validateUUID(teamID); err != nil {
-		return nil, err
-	}
 	return c.sendRequest("GET", fmt.Sprintf("/team/info?team_id=%s", teamID), nil)
 }
 
