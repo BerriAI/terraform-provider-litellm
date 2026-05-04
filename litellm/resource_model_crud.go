@@ -16,8 +16,8 @@ import (
 // It handles the case where resourceLiteLLMModelRead returns nil but clears the ID
 // (eventual consistency: model created but not yet visible on read-back).
 func retryModelRead(d *schema.ResourceData, m interface{}, maxRetries int) error {
-	delay := 1 * time.Second
-	maxDelay := 10 * time.Second
+	delay := 2 * time.Second
+	maxDelay := 30 * time.Second
 	modelID := d.Id()
 
 	for i := 0; i < maxRetries; i++ {
@@ -271,7 +271,7 @@ func createOrUpdateModel(d *schema.ResourceData, m interface{}, isUpdate bool) e
 
 	log.Printf("[INFO] Model created with ID %s. Starting retry mechanism to read the model...", modelID)
 	// Read back the resource with retries to ensure the state is consistent
-	return retryModelRead(d, m, 5)
+	return retryModelRead(d, m, 10)
 }
 
 func resourceLiteLLMModelCreate(d *schema.ResourceData, m interface{}) error {
