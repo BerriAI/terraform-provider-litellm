@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-13
+
+### Fixed
+
+- **key**: Include `tags` in `UpdateKey` payload so tag changes on an existing `litellm_key` are applied on update instead of being silently dropped (#41)
+
 ## [0.2.1] - 2026-04-13
 
 ### Fixed
