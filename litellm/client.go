@@ -158,6 +158,9 @@ func (c *Client) UpdateKey(key *Key) (*Key, error) {
 	if len(key.Guardrails) > 0 {
 		updateData["guardrails"] = key.Guardrails
 	}
+	if len(key.Tags) > 0 {
+		updateData["tags"] = key.Tags
+	}
 
 	resp, err := c.sendRequest("POST", "/key/update", updateData)
 	if err != nil {
