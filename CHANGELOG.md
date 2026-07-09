@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-09
+
+### Added
+
+- **model**: Add optional `pricing_base_model` attribute that sets `model_info.base_model` (the cost-map lookup key) independently of routing. Deployments whose routing name differs from the pricing key (for example Azure Data Zone, routed as `azure/gpt-4.1` but priced via `us/gpt-4.1-2025-04-14`) can now be billed correctly without breaking routing. When unset, behavior is unchanged and `base_model` continues to drive both routing and pricing (#47)
+
 ## [0.2.2] - 2026-05-13
 
 ### Fixed
