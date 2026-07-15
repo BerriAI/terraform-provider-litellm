@@ -58,9 +58,9 @@ func resourceLiteLLMTeamMemberCreate(d *schema.ResourceData, m interface{}) erro
 				"user_email": d.Get("user_email").(string),
 			},
 		},
-		"team_id":            d.Get("team_id").(string),
-		"max_budget_in_team": d.Get("max_budget_in_team").(float64),
+		"team_id": d.Get("team_id").(string),
 	}
+	setTeamMemberBudgetPayload(memberData, d, false)
 
 	log.Printf("[DEBUG] Create team member request payload: %+v", memberData)
 
@@ -83,22 +83,22 @@ func resourceLiteLLMTeamMemberCreate(d *schema.ResourceData, m interface{}) erro
 }
 
 func resourceLiteLLMTeamMemberRead(d *schema.ResourceData, m interface{}) error {
-	// There's no specific endpoint to read a single team member
-	// We might need to read the entire team and find the member
-	// For now, we'll just return the data we have in the state
+	client := m.(*Client)
+
 	log.Printf("[INFO] Reading team member with ID: %s", d.Id())
-	return nil
+	return syncTeamMemberState(d, client)
 }
 
 func resourceLiteLLMTeamMemberUpdate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*Client)
 
 	updateData := map[string]interface{}{
-		"user_id":            d.Get("user_id").(string),
-		"user_email":         d.Get("user_email").(string),
-		"team_id":            d.Get("team_id").(string),
-		"max_budget_in_team": d.Get("max_budget_in_team").(float64),
+		"user_id":    d.Get("user_id").(string),
+		"user_email": d.Get("user_email").(string),
+		"team_id":    d.Get("team_id").(string),
+		"role":       d.Get("role").(string),
 	}
+	setTeamMemberBudgetPayload(updateData, d, d.HasChange("max_budget_in_team"))
 
 	log.Printf("[DEBUG] Update team member request payload: %+v", updateData)
 
