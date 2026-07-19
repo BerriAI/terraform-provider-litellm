@@ -4,11 +4,74 @@ This document describes the release process for the LiteLLM Terraform Provider.
 
 ## Overview
 
-Releases are automated via GitHub Actions when a version tag is pushed. The workflow builds the provider for multiple platforms, signs the artifacts with GPG, and publishes them to GitHub Releases.
+Releases are triggered manually via GitHub Actions using [semantic-release](https://semantic-release.gitbook.io/semantic-release/). It analyzes commits since the last tag, determines the next version, creates a git tag, and then the existing GoReleaser workflow fires automatically to build, sign, and publish the provider to GitHub Releases and the Terraform Registry.
 
-## Prerequisites
+## How to Release
 
-### GPG Key Setup (One-Time Setup for Repository Maintainers)
+### 1. Prepare the Release
+
+Before triggering the release:
+
+1. **Update CHANGELOG.md**
+   - Move items from `[Unreleased]` section to a new version section
+   - Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format
+   - Include all notable changes since the last release
+
+   Example:
+   ```markdown
+   ## [0.2.1] - 2026-04-08
+
+   ### Fixed
+   - Bug fix description
+
+   ### Added
+   - New feature description
+   ```
+
+2. **Verify tests pass**
+   ```bash
+   make test
+   ```
+
+3. **Verify the build works locally**
+   ```bash
+   make build
+   ```
+
+4. **Commit and push changes to `main`**
+   ```bash
+   git add CHANGELOG.md
+   git commit -m "docs: update CHANGELOG for vX.Y.Z"
+   git push upstream main
+   ```
+
+### 2. Trigger the Release
+
+1. Go to **Actions → Semantic Release → Run workflow** in the GitHub UI
+2. Click **Run workflow**
+
+semantic-release will:
+- Analyze commits since the last tag using [Conventional Commits](https://www.conventionalcommits.org/)
+- Determine the next version (`fix:` → patch, `feat:` → minor, `feat!:` or `BREAKING CHANGE:` → major)
+- Create and push the git tag
+- Trigger the GoReleaser workflow, which builds binaries for all platforms, signs them with GPG, and publishes the GitHub Release
+- The Terraform Registry picks up the new release automatically
+
+## Commit Message Convention
+
+semantic-release determines the version bump from commit messages:
+
+| Commit prefix | Release type | Example |
+|---|---|---|
+| `fix:` | Patch (0.0.x) | `fix: handle nil pointer in team read` |
+| `feat:` | Minor (0.x.0) | `feat: add vector store resource` |
+| `feat!:` or `BREAKING CHANGE:` in body | Major (x.0.0) | `feat!: remove deprecated key attribute` |
+
+Commits with other prefixes (`docs:`, `chore:`, `refactor:`, etc.) do not trigger a release.
+
+## Prerequisites (One-Time Setup)
+
+### GPG Key Setup
 
 The Terraform Registry requires all providers to be signed with a GPG key. This must be configured before the first release.
 
@@ -68,114 +131,41 @@ Before publishing to the Terraform Registry:
 
 **Note**: The public key fingerprint must match the key used to sign the provider releases.
 
-## Release Steps
-
-### 1. Prepare the Release
-
-Before creating a release:
-
-1. **Update CHANGELOG.md**
-   - Move items from `[Unreleased]` section to a new version section
-   - Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format
-   - Use [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for version numbers
-   - Include all notable changes since the last release
-
-   Example:
-   ```markdown
-   ## [0.1.2] - 2026-02-20
-
-   ### Added
-   - New feature description
-
-   ### Fixed
-   - Bug fix description
-
-   ### Changed
-   - Changed behavior description
-   ```
-
-2. **Verify tests pass**
-   ```bash
-   make test
-   ```
-
-3. **Verify the build works locally**
-   ```bash
-   make build
-   ```
-
-4. **Commit and push changes**
-   ```bash
-   git add CHANGELOG.md
-   git commit -m "Prepare for v0.1.2 release"
-   git push origin main
-   ```
-
-### 2. Create and Push the Release Tag
-
-The release workflow is triggered automatically when a tag matching the pattern `v*` is pushed.
-
-```bash
-# Create a tag with the version number (must start with 'v')
-git tag v0.1.2
-
-# Push the tag to GitHub
-git push origin v0.1.2
-```
-
-**Important**:
-- Tags must follow the format: `v<MAJOR>.<MINOR>.<PATCH>` (e.g., `v0.1.2`, `v1.0.0`)
-- Once pushed, the GitHub Actions workflow will automatically start
-
 ### 3. Monitor the Release Workflow
 
-1. Go to: https://github.com/BerriAI/terraform-provider-litellm/actions
-2. Find the "Release" workflow run for your tag
-3. Monitor the progress and check for any errors
+1. Go to https://github.com/BerriAI/terraform-provider-litellm/actions
+2. Find the **Semantic Release** workflow run and confirm the tag was created
+3. Find the **Release** (GoReleaser) workflow run triggered by the new tag and monitor its progress
 
-The workflow will:
-- Check out the code
-- Set up Go
-- Import the GPG key
-- Run `go mod tidy`
+The GoReleaser workflow will:
 - Build binaries for multiple platforms (Linux, macOS, Windows, FreeBSD)
 - Create archives and checksums
 - Sign the checksums with GPG
-- Create a GitHub release
-- Upload all artifacts
+- Create a GitHub Release and upload all artifacts
 
 ### 4. Verify the Release
 
-After the workflow completes successfully:
+After both workflows complete successfully:
 
-1. **Check the GitHub Release**
-   - Go to: https://github.com/BerriAI/terraform-provider-litellm/releases
-   - Verify the release was created with the correct version
-   - Confirm all artifacts are present:
-     - Binary archives for each platform
-     - SHA256SUMS file
-     - SHA256SUMS.sig (GPG signature)
-     - terraform-registry-manifest.json
+1. **Check the GitHub Release** at https://github.com/BerriAI/terraform-provider-litellm/releases — confirm binaries, SHA256SUMS, and `.sig` are present
 
 2. **Verify the signature** (optional)
    ```bash
-   # Download the checksums and signature
    wget https://github.com/BerriAI/terraform-provider-litellm/releases/download/v0.1.2/terraform-provider-litellm_0.1.2_SHA256SUMS
    wget https://github.com/BerriAI/terraform-provider-litellm/releases/download/v0.1.2/terraform-provider-litellm_0.1.2_SHA256SUMS.sig
 
-   # Verify the signature
    gpg --verify terraform-provider-litellm_0.1.2_SHA256SUMS.sig terraform-provider-litellm_0.1.2_SHA256SUMS
    ```
 
-### 5. Publish to Terraform Registry (Optional)
-
-If this provider is published to the Terraform Registry:
-
-1. The registry should automatically detect the new release via the GitHub webhook
-2. If not, you may need to manually trigger a sync on the Terraform Registry dashboard
-3. Verify the new version appears at: https://registry.terraform.io/providers/BerriAI/litellm/latest
+3. **Check the Terraform Registry** at https://registry.terraform.io/providers/BerriAI/litellm/latest — the new version should appear within a few minutes
 
 ## Troubleshooting
+
+### semantic-release Creates No Tag
+
+**Cause**: No commits since the last tag match `fix:`, `feat:`, or `BREAKING CHANGE`.
+
+**Solution**: Check commit messages since the last tag. At least one must follow the Conventional Commits format with a release-triggering prefix.
 
 ### Release Workflow Fails with GPG Error
 
@@ -215,13 +205,13 @@ git tag -d v0.1.2
 
 # Delete remote tag (use with caution!)
 git push origin :refs/tags/v0.1.2
-
-# Create and push the corrected tag
-git tag v0.1.2
-git push origin v0.1.2
 ```
 
 **Warning**: Deleting and recreating tags should be avoided in production. If a release has already been published, create a new patch version instead.
+
+### Registry Not Showing New Version
+
+The registry webhook usually picks up within minutes. If not, check the webhook status under the provider's settings on registry.terraform.io.
 
 ## Version Numbering
 
@@ -245,9 +235,10 @@ For pre-1.0 releases:
 
 ## References
 
+- [semantic-release Documentation](https://semantic-release.gitbook.io/semantic-release/)
+- [Conventional Commits](https://www.conventionalcommits.org/)
 - [GoReleaser Documentation](https://goreleaser.com/)
 - [Terraform Provider Publishing](https://www.terraform.io/docs/registry/providers/publishing.html)
 - [HashiCorp GPG Signing Requirements](https://www.terraform.io/docs/registry/providers/publishing.html#signing-releases)
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Semantic Versioning](https://semver.org/)
-- [Keep a Changelog](https://keepachangelog.com/)
