@@ -146,16 +146,31 @@ func resourceKeyCreate(ctx context.Context, d *schema.ResourceData, m interface{
 	key := &Key{}
 	mapResourceDataToKey(d, key)
 
+	// Honor a user-supplied "key" value. "key" is a write-only attribute, so
+	// d.Get("key") returns "" (the SDK clears write-only fields after plan).
+	// Read it from the raw config instead so a caller-provided key is sent to
+	// /key/generate. Scoped to Create only: the Update path reuses
+	// mapResourceDataToKey with key.Key set to the token ID and must not be
+	// overwritten here. See issue #39.
+	if rawConfig := d.GetRawConfig(); !rawConfig.IsNull() {
+		if rawKey := rawConfig.GetAttr("key"); !rawKey.IsNull() && rawKey.IsKnown() {
+			key.Key = rawKey.AsString()
+		}
+	}
+
 	createdKey, err := c.CreateKey(key)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error creating key: %s", err))
 	}
 
 	d.SetId(createdKey.TokenID)
-	// Set the write-only key value so it's available during this apply
-	// but will not be persisted to state.
+
+	// Re-set the write-only key value AFTER the read so it is available to
+	// downstream resources during this apply (Read does not repopulate
+	// write-only fields). See issue #39.
+	diags := resourceKeyRead(ctx, d, m)
 	d.Set("key", createdKey.Key)
-	return resourceKeyRead(ctx, d, m)
+	return diags
 }
 
 func resourceKeyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
