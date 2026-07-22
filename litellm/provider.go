@@ -23,6 +23,8 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"litellm_credential":   dataSourceLiteLLMCredential(),
 			"litellm_vector_store": dataSourceLiteLLMVectorStore(),
+			"litellm_model":        dataSourceLiteLLMModel(),
+			"litellm_models":       dataSourceLiteLLMModels(),
 		},
 		Schema: map[string]*schema.Schema{
 			"api_base": {
