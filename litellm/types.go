@@ -17,6 +17,11 @@ type ErrorResponse struct {
 	} `json:"detail"`
 }
 
+// ModelInfoListResponse represents the response from GET /model/info.
+type ModelInfoListResponse struct {
+	Data []ModelResponse `json:"data"`
+}
+
 // ModelResponse represents a response from the API containing model information.
 type ModelResponse struct {
 	ModelName     string                 `json:"model_name"`
