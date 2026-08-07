@@ -104,28 +104,25 @@ Before creating a release:
    make build
    ```
 
-4. **Commit and push changes**
-   ```bash
-   git add CHANGELOG.md
-   git commit -m "Prepare for v0.1.2 release"
-   git push origin main
-   ```
+4. **Land the changes in BerriAI/litellm**
 
-### 2. Create and Push the Release Tag
+   Open a PR to `BerriAI/litellm` updating `terraform/provider/CHANGELOG.md` (and any source changes) and merge it. Note the merge commit SHA; the release workflow takes it as `git_ref`
 
-The release workflow is triggered automatically when a tag matching the pattern `v*` is pushed.
+### 2. Mirror and Tag via project-releaser
 
-```bash
-# Create a tag with the version number (must start with 'v')
-git tag v0.1.2
+The provider source lives at `terraform/provider/` in `BerriAI/litellm`; `BerriAI/terraform-provider-litellm` is a thin release mirror. Do not commit or tag the mirror directly
 
-# Push the tag to GitHub
-git push origin v0.1.2
-```
+1. Go to `BerriAI/project-releaser` > **Actions** > `Publish Terraform provider`
+2. Click **Run workflow**:
+   - `git_ref`: full 40-char commit SHA from `BerriAI/litellm` to release from
+   - `provider_version`: the new version without the `v` prefix (e.g. `0.3.0`)
+   - `dry_run`: optional; validates without pushing
+3. The workflow rsyncs `terraform/provider/` into the mirror repo, commits, and pushes tag `v<provider_version>`
+4. The tag push triggers the mirror's `Release` workflow (goreleaser), which is gated by the `production-release` environment approval
 
 **Important**:
 - Tags must follow the format: `v<MAJOR>.<MINOR>.<PATCH>` (e.g., `v0.1.2`, `v1.0.0`)
-- Once pushed, the GitHub Actions workflow will automatically start
+- The workflow refuses to overwrite an existing tag; publish a new version instead
 
 ### 3. Monitor the Release Workflow
 
@@ -206,22 +203,9 @@ If this provider is published to the Terraform Registry:
 
 ### Tag Already Exists
 
-**Error**: Cannot push tag because it already exists
+**Error**: The publish workflow refuses to push because the tag already exists on the mirror
 
-**Solution**:
-```bash
-# Delete local tag
-git tag -d v0.1.2
-
-# Delete remote tag (use with caution!)
-git push origin :refs/tags/v0.1.2
-
-# Create and push the corrected tag
-git tag v0.1.2
-git push origin v0.1.2
-```
-
-**Warning**: Deleting and recreating tags should be avoided in production. If a release has already been published, create a new patch version instead.
+**Solution**: Tags are immutable by design. Re-run the workflow with a new patch version instead of deleting or moving an existing tag
 
 ## Version Numbering
 

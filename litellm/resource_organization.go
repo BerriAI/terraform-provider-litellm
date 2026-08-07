@@ -155,7 +155,7 @@ func resourceLiteLLMOrganizationUpdate(d *schema.ResourceData, m interface{}) er
 	orgData := buildOrganizationData(d, d.Id())
 	log.Printf("[DEBUG] Update organization request payload: %+v", orgData)
 
-	resp, err := MakeRequest(client, "POST", endpointOrganizationUpdate, orgData)
+	resp, err := MakeRequest(client, "PATCH", endpointOrganizationUpdate, orgData)
 	if err != nil {
 		return fmt.Errorf("error updating organization: %w", err)
 	}
