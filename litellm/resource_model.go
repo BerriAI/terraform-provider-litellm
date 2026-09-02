@@ -11,9 +11,6 @@ func resourceLiteLLMModel() *schema.Resource {
 		Read:   resourceLiteLLMModelRead,
 		Update: resourceLiteLLMModelUpdate,
 		Delete: resourceLiteLLMModelDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
 
 		Schema: map[string]*schema.Schema{
 			"model_name": {
