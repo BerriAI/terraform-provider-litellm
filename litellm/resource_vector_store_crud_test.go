@@ -53,3 +53,75 @@ func TestVectorStoreReadDoesNotPersistServerLitellmParams(t *testing.T) {
 		t.Fatalf("read did not populate non-sensitive fields")
 	}
 }
+
+// The real API wraps /vector_store/info responses in {"vector_store": {...}}.
+func TestVectorStoreReadUnwrapsResponse(t *testing.T) {
+	inner := VectorStoreResponse{
+		VectorStoreID:     "vs-123",
+		VectorStoreName:   "kb",
+		CustomLLMProvider: "openai",
+	}
+	body, _ := json.Marshal(map[string]interface{}{"vector_store": inner})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+	}))
+	defer srv.Close()
+
+	client := NewClient(srv.URL, "test-key", true)
+	d := schema.TestResourceDataRaw(t, resourceLiteLLMVectorStore().Schema, map[string]interface{}{
+		"vector_store_name":   "kb",
+		"custom_llm_provider": "openai",
+	})
+	d.SetId("vs-123")
+
+	if err := resourceLiteLLMVectorStoreRead(d, client); err != nil {
+		t.Fatalf("read failed: %v", err)
+	}
+	if d.Get("vector_store_id").(string) != "vs-123" {
+		t.Fatalf("wrapped response not unwrapped: vector_store_id = %q", d.Get("vector_store_id"))
+	}
+}
+
+// LiteLLM requires vector_store_id in the create request; the provider must
+// generate one when not configured, and use the real ID from the (wrapped)
+// response as the resource ID, not the store name.
+func TestVectorStoreCreateGeneratesIDAndUsesResponseID(t *testing.T) {
+	var captured VectorStoreRequest
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&captured)
+		resp := map[string]interface{}{
+			"vector_store": VectorStoreResponse{
+				VectorStoreID:     captured.VectorStoreID,
+				VectorStoreName:   captured.VectorStoreName,
+				CustomLLMProvider: captured.CustomLLMProvider,
+			},
+		}
+		body, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+	}))
+	defer srv.Close()
+
+	client := NewClient(srv.URL, "test-key", true)
+	d := schema.TestResourceDataRaw(t, resourceLiteLLMVectorStore().Schema, map[string]interface{}{
+		"vector_store_name":   "kb",
+		"custom_llm_provider": "openai",
+	})
+
+	if err := resourceLiteLLMVectorStoreCreate(d, client); err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
+	if captured.VectorStoreID == "" {
+		t.Fatalf("create request sent an empty vector_store_id")
+	}
+	if d.Id() != captured.VectorStoreID {
+		t.Fatalf("resource ID = %q, want the generated vector_store_id %q", d.Id(), captured.VectorStoreID)
+	}
+	if d.Id() == "kb" {
+		t.Fatalf("resource ID was set to the vector store name instead of its ID")
+	}
+}

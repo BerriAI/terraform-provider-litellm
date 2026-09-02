@@ -232,7 +232,7 @@ type CredentialResponse struct {
 
 // VectorStoreRequest represents a request to create or update a vector store.
 type VectorStoreRequest struct {
-	VectorStoreID          string                 `json:"vector_store_id,omitempty"`
+	VectorStoreID          string                 `json:"vector_store_id"`
 	CustomLLMProvider      string                 `json:"custom_llm_provider"`
 	VectorStoreName        string                 `json:"vector_store_name"`
 	VectorStoreDescription string                 `json:"vector_store_description,omitempty"`
