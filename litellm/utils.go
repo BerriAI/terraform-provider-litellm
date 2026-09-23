@@ -2,8 +2,6 @@ package litellm
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -60,18 +58,6 @@ func handleAPIResponse(resp *http.Response, reqBody interface{}, client *Client)
 	}
 
 	return &modelResp, nil
-}
-
-// hashedKeyToken normalizes a raw sk- API key to its SHA-256 token hash, the
-// identifier the proxy stores and accepts, so the plaintext key never lands
-// in request URLs, resource IDs, or proxy access logs. Values that are
-// already hashed pass through unchanged.
-func hashedKeyToken(key string) string {
-	if !strings.HasPrefix(key, "sk-") {
-		return key
-	}
-	sum := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(sum[:])
 }
 
 // MakeRequest is a helper function to make HTTP requests
