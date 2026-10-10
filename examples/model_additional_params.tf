@@ -11,6 +11,8 @@ provider "litellm" {
 # - Non-convertible strings remain strings.
 # - Non-string map values are passed through unchanged.
 # - Use "additional_drop_params" as a JSON array to remove parameters from the final request.
+# - Use "timeout" (numeric string, seconds) to set the LiteLLM HTTP/request timeout for this model.
+# - Use "stream_timeout" (numeric string, seconds) for streaming response timeouts.
 
 resource "litellm_model" "with_additional" {
   model_name          = "custom-model"
@@ -27,6 +29,8 @@ resource "litellm_model" "with_additional" {
     "experimental_feature"   = "enabled"                        # stays string "enabled"
     "complex_config"         = "{\"nested\": {\"value\": 42}}"  # parsed as JSON object
     "additional_drop_params" = "[\"reasoningEffort\"]"          # removes reasoningEffort parameter
+    "timeout"                = "600"                            # request timeout in seconds (parsed as int)
+    "stream_timeout"         = "300"                            # streaming timeout in seconds (parsed as int)
     # You may also pass non-string values (they will be passed through unchanged)
     # "raw_flag" = true
   }
