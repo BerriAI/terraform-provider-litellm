@@ -122,6 +122,11 @@ func hoistKeyFieldsStoredInMetadata(info map[string]interface{}) {
 }
 
 func (c *Client) UpdateKey(key *Key) (*Key, error) {
+	return c.updateKey(key, nil)
+}
+
+// A non-nil changedFields restricts writes to the Terraform resource diff.
+func (c *Client) updateKey(key *Key, changedFields map[string]bool) (*Key, error) {
 	// Create a new map with only the fields that can be updated
 	updateData := map[string]interface{}{
 		"key":              key.Key,
@@ -131,6 +136,10 @@ func (c *Client) UpdateKey(key *Key) (*Key, error) {
 		"permissions":      key.Permissions,
 		"model_max_budget": key.ModelMaxBudget,
 		"blocked":          key.Blocked,
+	}
+
+	if key.ObjectPermission != nil {
+		updateData["object_permission"] = key.ObjectPermission
 	}
 
 	// The proxy keeps the stored metadata only when the field is absent, so nil means omit.
@@ -205,6 +214,13 @@ func (c *Client) UpdateKey(key *Key) (*Key, error) {
 		updateData["organization_id"] = key.OrganizationID
 	}
 
+	if changedFields != nil {
+		for field := range updateData {
+			if field != "key" && !changedFields[field] {
+				delete(updateData, field)
+			}
+		}
+	}
 	resp, err := c.sendRequest("POST", "/key/update", updateData)
 	if err != nil {
 		return nil, err
@@ -310,6 +326,16 @@ func (c *Client) parseKeyResponse(resp map[string]interface{}) (*Key, error) {
 			if m, ok := v.(map[string]interface{}); ok {
 				createdKey.Config = m
 			}
+		case "object_permission":
+			raw, err := json.Marshal(v)
+			if err != nil {
+				return nil, fmt.Errorf("encoding key object_permission: %w", err)
+			}
+			var permission KeyObjectPermission
+			if err := json.Unmarshal(raw, &permission); err != nil {
+				return nil, fmt.Errorf("decoding key object_permission: %w", err)
+			}
+			createdKey.ObjectPermission = &permission
 		case "permissions":
 			if m, ok := v.(map[string]interface{}); ok {
 				createdKey.Permissions = m
