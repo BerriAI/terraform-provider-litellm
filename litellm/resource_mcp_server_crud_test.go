@@ -143,6 +143,34 @@ func TestMCPServerCreateSendsWriteOnlyCredentials(t *testing.T) {
 	}
 }
 
+func TestMCPServerCreateAcceptsCreatedResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/mcp/server" {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"server_id":"srv-created","server_name":"crm","url":"https://mcp.example.com","transport":"http","auth_type":"none"}`))
+	}))
+	defer srv.Close()
+
+	d := schema.TestResourceDataRaw(t, resourceLiteLLMMCPServer().Schema, map[string]interface{}{
+		"server_name": "crm",
+		"url":         "https://mcp.example.com",
+		"transport":   "http",
+		"auth_type":   "none",
+	})
+
+	if err := resourceLiteLLMMCPServerCreate(d, NewClient(srv.URL, "test-key", true)); err != nil {
+		t.Fatalf("create failed for 201 Created response: %v", err)
+	}
+	if d.Id() != "srv-created" {
+		t.Fatalf("expected id srv-created, got %q", d.Id())
+	}
+}
+
 func TestMCPServerUpdateSendsBearerAuthValue(t *testing.T) {
 	var updated map[string]interface{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
