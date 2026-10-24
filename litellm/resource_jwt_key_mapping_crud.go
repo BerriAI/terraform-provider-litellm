@@ -19,7 +19,6 @@ func resourceLiteLLMJWTKeyMappingCreate(d *schema.ResourceData, m interface{}) e
 		JWTClaimName:  d.Get("jwt_claim_name").(string),
 		JWTClaimValue: d.Get("jwt_claim_value").(string),
 		Key:           d.Get("key").(string),
-		Token:         d.Get("token_id").(string),
 		Description:   d.Get("description").(string),
 	}
 
@@ -96,7 +95,6 @@ func resourceLiteLLMJWTKeyMappingUpdate(d *schema.ResourceData, m interface{}) e
 	client := m.(*Client)
 
 	oldKey, _ := d.GetChange("key")
-	oldTokenID, _ := d.GetChange("token_id")
 	oldDescription, _ := d.GetChange("description")
 	oldIsActive, _ := d.GetChange("is_active")
 
@@ -106,7 +104,6 @@ func resourceLiteLLMJWTKeyMappingUpdate(d *schema.ResourceData, m interface{}) e
 		// attempting to resync, so a failed refresh can't leave the rejected
 		// values persisted into state.
 		d.Set("key", oldKey)
-		d.Set("token_id", oldTokenID)
 		d.Set("description", oldDescription)
 		d.Set("is_active", oldIsActive)
 		if readErr := resourceLiteLLMJWTKeyMappingRead(d, m); readErr != nil {
@@ -149,7 +146,6 @@ func updateJWTKeyMapping(d *schema.ResourceData, client *Client) error {
 	updateRequest := JWTKeyMappingUpdateRequest{
 		ID:          d.Id(),
 		Key:         d.Get("key").(string),
-		Token:       d.Get("token_id").(string),
 		Description: d.Get("description").(string),
 		IsActive:    d.Get("is_active").(bool),
 	}
