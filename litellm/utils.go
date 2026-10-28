@@ -10,9 +10,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func isModelNotFoundError(errResp ErrorResponse) bool {
@@ -46,7 +43,7 @@ func handleAPIResponse(resp *http.Response, reqBody interface{}, client *Client)
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if resp.StatusCode != http.StatusOK {
 		var errResp ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &errResp); err == nil {
 			if isModelNotFoundError(errResp) {
@@ -63,10 +60,6 @@ func handleAPIResponse(resp *http.Response, reqBody interface{}, client *Client)
 	}
 	if err := json.Unmarshal(bodyBytes, &envelope); err == nil && len(envelope.Data) > 0 {
 		bodyBytes = envelope.Data[0]
-	}
-
-	if len(bodyBytes) == 0 || string(bodyBytes) == "null" {
-		return nil, nil
 	}
 
 	var modelResp ModelResponse
@@ -147,7 +140,7 @@ func handleMCPAPIResponse(resp *http.Response, result interface{}, client *Clien
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if resp.StatusCode != http.StatusOK {
 		var errResp ErrorResponse
 		if err := json.Unmarshal(bodyBytes, &errResp); err == nil {
 			if isMCPServerNotFoundError(errResp) {
@@ -329,16 +322,4 @@ func handleVectorStoreAPIResponse(resp *http.Response, result interface{}, clien
 	}
 
 	return nil
-}
-
-// writeOnlyString returns the config value of a write-only string attribute.
-// Terraform never stores write-only values in plan or state, so d.Get sees
-// null in a real run; the raw config is the only place the value lives.
-func writeOnlyString(d *schema.ResourceData, attr string) string {
-	raw, diags := d.GetRawConfigAt(cty.GetAttrPath(attr))
-	if !diags.HasError() && raw.IsKnown() && !raw.IsNull() && raw.Type() == cty.String {
-		return raw.AsString()
-	}
-	v, _ := d.Get(attr).(string)
-	return v
 }
