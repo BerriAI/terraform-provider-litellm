@@ -37,9 +37,8 @@ func isNotFound(err error) bool {
 }
 
 func NewClient(apiBase, apiKey string, insecureSkipVerify bool) *Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
-	}
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: insecureSkipVerify}
 
 	return &Client{
 		APIBase:            apiBase,
