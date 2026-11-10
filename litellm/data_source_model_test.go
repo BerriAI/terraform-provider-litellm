@@ -35,8 +35,7 @@ func TestDataSourceModelReadSingleObject(t *testing.T) {
 					"base_model": "gpt-4o",
 					"tier": "paid",
 					"mode": "chat",
-					"team_id": "team-1",
-					"display_name": "GPT-4o"
+					"team_id": "team-1"
 				}
 			}
 		}`))
@@ -67,7 +66,6 @@ func TestDataSourceModelReadSingleObject(t *testing.T) {
 		"tier":                "paid",
 		"mode":                "chat",
 		"team_id":             "team-1",
-		"display_name":        "GPT-4o",
 		"db_model":            true,
 	}
 	for attr, want := range checks {
@@ -117,7 +115,7 @@ func TestDataSourceModelsRead(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{
 			"data": [
-				{"model_name": "a", "litellm_params": {"model": "openai/a", "custom_llm_provider": "openai"}, "model_info": {"id": "id-1", "db_model": true, "display_name": "Model A"}},
+				{"model_name": "a", "litellm_params": {"model": "openai/a", "custom_llm_provider": "openai"}, "model_info": {"id": "id-1", "db_model": true}},
 				{"model_name": "b", "litellm_params": {"model": "anthropic/b", "custom_llm_provider": "anthropic"}, "model_info": {"id": "id-2"}}
 			]
 		}`))
@@ -145,11 +143,7 @@ func TestDataSourceModelsRead(t *testing.T) {
 		t.Fatalf("expected 2 models, got %d", len(models))
 	}
 	first := models[0].(map[string]interface{})
-	if first["model_name"] != "a" || first["custom_llm_provider"] != "openai" || first["db_model"] != true || first["display_name"] != "Model A" {
+	if first["model_name"] != "a" || first["custom_llm_provider"] != "openai" || first["db_model"] != true {
 		t.Errorf("unexpected first model: %v", first)
-	}
-	second := models[1].(map[string]interface{})
-	if second["display_name"] != "" {
-		t.Errorf("expected empty display_name for model without one, got %v", second["display_name"])
 	}
 }
