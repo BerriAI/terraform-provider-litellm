@@ -48,9 +48,49 @@ resource "litellm_key" "example" {
 }
 ```
 
+## Direct MCP permissions
+
+```hcl
+resource "litellm_key" "service" {
+  key_alias   = "shopfloor-service"
+  mcp_servers = ["<registered-mcp-server-id>"]
+}
+```
+
+`mcp_servers` maps to the API's `object_permission.mcp_servers`; it is separate
+from the `permissions` map. No access group is required. Use registered server
+IDs from the same proxy instance (for example, from `litellm_mcp_servers`).
+
+- Omit `mcp_servers` (or use `null`) to leave existing direct grants unmanaged.
+- Set a nonempty set to manage those direct grants and repair drift.
+- Set `mcp_servers = []` to clear direct grants. Removing the attribute alone
+  retains existing grants, so clear it explicitly before relinquishing ownership.
+
+An empty list is **not a deny-all policy**: team inheritance, global servers and
+other permission sources still affect effective access. See
+[LiteLLM MCP permission management](https://docs.litellm.ai/docs/mcp_control).
+
+Creation includes permissions in `/key/generate`. Updates use `/key/update` and
+send only fields changed in Terraform. An MCP-only change sends the key ID and
+`object_permission.mcp_servers`, preserving budget settings and other object
+permission fields. Verify `tools/list` and `tools/call` after updates and
+revocation against your deployed LiteLLM version.
+
+The local provider contract can be tested without proxy credentials:
+
+```sh
+TF_ACC=1 TF_ACC_TERRAFORM_PATH=/path/to/terraform \
+  go test ./litellm -run TestAccKeyMCPPermissions -count=1
+```
+
+This runs Terraform against an in-process HTTP fixture; it does not exercise
+live MCP authorization.
+
 ## Argument Reference
 
 The following arguments are supported:
+
+* `mcp_servers` - (Optional, Computed) Set of directly granted MCP server IDs. Omitted/null leaves grants unmanaged; `[]` clears direct grants.
 
 * `models` - (Optional) List of models that can be used with this key. This restricts the key to only use the specified models.
 

@@ -127,8 +127,15 @@ type ModelInfo struct {
 	DisplayName string `json:"display_name,omitempty"`
 }
 
+// KeyObjectPermission contains the direct MCP grants managed by the key resource.
+// The enclosing pointer distinguishes omission from an explicitly empty list.
+type KeyObjectPermission struct {
+	MCPServers []string `json:"mcp_servers"`
+}
+
 // Key represents a LiteLLM API key.
 type Key struct {
+	ObjectPermission         *KeyObjectPermission   `json:"object_permission,omitempty"`
 	Key                      string                 `json:"key,omitempty"`
 	TokenID                  string                 `json:"token_id,omitempty"`
 	Models                   []string               `json:"models"`

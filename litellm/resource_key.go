@@ -34,6 +34,13 @@ func resourceKey() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"mcp_servers": {
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "Direct MCP server IDs on object_permission.mcp_servers. Omit to leave unmanaged; set [] to clear direct grants. Other permission sources still apply.",
+			},
 			"models": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -334,7 +341,20 @@ func resourceKeyUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 	}
 	key.Metadata = metadata
 
-	if _, err := c.UpdateKey(key); err != nil {
+	// Send only configured changes, not every value read from the server.
+	// In particular, MCP-only edits must not reconcile external budgets.
+	changedFields := make(map[string]bool)
+	for name, field := range resourceKey().Schema {
+		if (field.Optional || field.Required) && !field.WriteOnly && d.HasChange(name) {
+			if name == "mcp_servers" {
+				changedFields["object_permission"] = true
+				key.ObjectPermission = &KeyObjectPermission{MCPServers: expandStringList(d.Get(name).(*schema.Set).List())}
+			} else {
+				changedFields[name] = true
+			}
+		}
+	}
+	if _, err := c.updateKey(key, changedFields); err != nil {
 		return failedKeyUpdate(ctx, d, m, err)
 	}
 
@@ -480,6 +500,10 @@ func mapResourceDataToKey(d *schema.ResourceData, key *Key) {
 	key.Aliases = d.Get("aliases").(map[string]interface{})
 	key.Config = d.Get("config").(map[string]interface{})
 	key.Permissions = d.Get("permissions").(map[string]interface{})
+	// GetOk/GetOkExists cannot distinguish an omitted computed set from [].
+	if raw, diags := d.GetRawConfigAt(cty.GetAttrPath("mcp_servers")); !diags.HasError() && raw.IsKnown() && !raw.IsNull() {
+		key.ObjectPermission = &KeyObjectPermission{MCPServers: expandStringList(d.Get("mcp_servers").(*schema.Set).List())}
+	}
 	key.ModelMaxBudget = parseKeyModelMaxBudget(d.Get("model_max_budget").(string))
 	key.ModelRPMLimit = d.Get("model_rpm_limit").(map[string]interface{})
 	key.ModelTPMLimit = d.Get("model_tpm_limit").(map[string]interface{})
@@ -501,6 +525,12 @@ func mapKeyToResourceData(d *schema.ResourceData, key *Key) {
 	// token_id is the SHA-256 hash of the key, used as the resource ID.
 	// It is safe to store in state since it cannot be used to authenticate.
 	d.Set("token_id", d.Id())
+	// Always clear stale state if permissions were removed remotely.
+	mcpServers := []string{}
+	if key.ObjectPermission != nil {
+		mcpServers = key.ObjectPermission.MCPServers
+	}
+	d.Set("mcp_servers", mcpServers)
 
 	// Note: "key" is write-only and must not be set here (Read operations).
 	// It is only set during Create so it is available during apply.
