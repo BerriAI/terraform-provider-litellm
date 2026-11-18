@@ -9,11 +9,11 @@ The provider is released **in lockstep with LiteLLM**: every LiteLLM release (de
 The flow, end to end:
 
 1. `BerriAI/project-releaser`'s release pipeline resolves the commit to release (`main` HEAD for dev; `main` HEAD or an operator-supplied SHA for rc/stable) and passes the release approval gate
-2. Its componentized terraform job rsyncs `terraform/provider/` from that commit into `BerriAI/terraform-provider-litellm`, commits, and pushes the tag `v<litellm version>` (for example `v1.99.0`, `v1.99.0-rc.1`, `v1.99.0-dev.1`), alongside the `terraform-aws-litellm` / `terraform-google-litellm` module mirrors which get the same tag
+2. Its componentized terraform job rsyncs `litellm/deploy/terraform/provider/` from that commit into `BerriAI/terraform-provider-litellm`, commits, and pushes the tag `v<litellm version>` (for example `v1.99.0`, `v1.99.0-rc.1`, `v1.99.0-dev.1`), alongside the `terraform-aws-litellm` / `terraform-google-litellm` module mirrors which get the same tag
 3. The tag push triggers the mirror's own `Release` workflow (goreleaser): multi-platform build, GPG-signed checksums, GitHub release. It runs unattended; project-releaser does not wait for it
 4. The public Terraform Registry ingests the GitHub release as provider version `<litellm version>`
 
-`terraform/provider/` only exists from LiteLLM ~1.95, so a stable patch cut from an older line skips the provider and publishes only the modules.
+`litellm/deploy/terraform/provider/` only exists from LiteLLM ~1.95, so a stable patch cut from an older line skips the provider and publishes only the modules.
 
 ## Prerequisites
 
