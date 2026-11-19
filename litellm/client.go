@@ -13,8 +13,6 @@ import (
 	"strings"
 )
 
-const keyStatusDeleted = "deleted"
-
 type Client struct {
 	APIBase            string
 	APIKey             string
@@ -84,9 +82,6 @@ func (c *Client) GetKey(keyID string) (*Key, error) {
 	// /key/info nests the key's fields under "info"; only "key" itself is
 	// top-level. Without unwrapping, reads map nothing back into state.
 	if info, ok := resp["info"].(map[string]interface{}); ok {
-		if status, _ := info["status"].(string); status == keyStatusDeleted {
-			return nil, nil
-		}
 		if _, present := info["key"]; !present {
 			if k, ok := resp["key"].(string); ok {
 				info["key"] = k
@@ -460,7 +455,7 @@ func (c *Client) sendRequest(method, path string, body interface{}) (map[string]
 	log.Printf("Response status: %d", resp.StatusCode)
 	log.Printf("Response body: %s", c.redactSensitiveData(string(bodyBytes)))
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, &apiError{StatusCode: resp.StatusCode, Body: string(bodyBytes)}
 	}
 
