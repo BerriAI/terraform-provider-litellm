@@ -72,6 +72,7 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 release:
+  make_latest: false
   prerelease: auto
   extra_files:
     - glob: 'terraform-registry-manifest.json'
