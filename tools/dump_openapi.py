@@ -2,7 +2,7 @@
 
 Run from the litellm repo root with the proxy dependencies installed:
 
-    python terraform/provider/tools/dump_openapi.py openapi.json
+    python litellm/deploy/terraform/provider/tools/dump_openapi.py openapi.json
 """
 
 import json
@@ -18,6 +18,6 @@ def main(out_path: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("usage: python terraform/provider/tools/dump_openapi.py <out_path>", file=sys.stderr)
+        print("usage: python litellm/deploy/terraform/provider/tools/dump_openapi.py <out_path>", file=sys.stderr)
         sys.exit(2)
     main(sys.argv[1])
