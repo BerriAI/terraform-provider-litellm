@@ -1,7 +1,7 @@
 # LiteLLM Terraform Provider (release mirror)
 
 This repository is a thin release mirror. The provider's source of truth lives at
-[`terraform/provider/` in BerriAI/litellm](https://github.com/BerriAI/litellm/tree/main/terraform/provider),
+[`terraform/provider/` in BerriAI/litellm](https://github.com/BerriAI/litellm/tree/main/litellm/deploy/terraform/provider),
 where every change is built, tested, and statically audited against the LiteLLM proxy's
 OpenAPI schema so the provider cannot drift from the API it manages
 
